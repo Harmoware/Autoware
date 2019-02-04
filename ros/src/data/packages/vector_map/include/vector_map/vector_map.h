@@ -1,18 +1,32 @@
 /*
- * Copyright 2015-2019 Autoware Foundation. All rights reserved.
+ *  Copyright (c) 2015, Nagoya University
+ *  All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  * Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ *  * Neither the name of Autoware nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ *  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #ifndef VECTOR_MAP_VECTOR_MAP_H
 #define VECTOR_MAP_VECTOR_MAP_H
@@ -309,41 +323,41 @@ std::vector<T> parse(const std::string& csv_file)
   return objs;
 }
 
-/* namespace */
-/* { */
-/* void updatePoint(std::map<Key<Point>, Point>& map, const PointArray& msg); */
-/* void updateVector(std::map<Key<Vector>, Vector>& map, const VectorArray& msg); */
-/* void updateLine(std::map<Key<Line>, Line>& map, const LineArray& msg); */
-/* void updateArea(std::map<Key<Area>, Area>& map, const AreaArray& msg); */
-/* void updatePole(std::map<Key<Pole>, Pole>& map, const PoleArray& msg); */
-/* void updateBox(std::map<Key<Box>, Box>& map, const BoxArray& msg); */
-/* void updateDTLane(std::map<Key<DTLane>, DTLane>& map, const DTLaneArray& msg); */
-/* void updateNode(std::map<Key<Node>, Node>& map, const NodeArray& msg); */
-/* void updateLane(std::map<Key<Lane>, Lane>& map, const LaneArray& msg); */
-/* void updateWayArea(std::map<Key<WayArea>, WayArea>& map, const WayAreaArray& msg); */
-/* void updateRoadEdge(std::map<Key<RoadEdge>, RoadEdge>& map, const RoadEdgeArray& msg); */
-/* void updateGutter(std::map<Key<Gutter>, Gutter>& map, const GutterArray& msg); */
-/* void updateCurb(std::map<Key<Curb>, Curb>& map, const CurbArray& msg); */
-/* void updateWhiteLine(std::map<Key<WhiteLine>, WhiteLine>& map, const WhiteLineArray& msg); */
-/* void updateStopLine(std::map<Key<StopLine>, StopLine>& map, const StopLineArray& msg); */
-/* void updateZebraZone(std::map<Key<ZebraZone>, ZebraZone>& map, const ZebraZoneArray& msg); */
-/* void updateCrossWalk(std::map<Key<CrossWalk>, CrossWalk>& map, const CrossWalkArray& msg); */
-/* void updateRoadMark(std::map<Key<RoadMark>, RoadMark>& map, const RoadMarkArray& msg); */
-/* void updateRoadPole(std::map<Key<RoadPole>, RoadPole>& map, const RoadPoleArray& msg); */
-/* void updateRoadSign(std::map<Key<RoadSign>, RoadSign>& map, const RoadSignArray& msg); */
-/* void updateSignal(std::map<Key<Signal>, Signal>& map, const SignalArray& msg); */
-/* void updateStreetLight(std::map<Key<StreetLight>, StreetLight>& map, const StreetLightArray& msg); */
-/* void updateUtilityPole(std::map<Key<UtilityPole>, UtilityPole>& map, const UtilityPoleArray& msg); */
-/* void updateGuardRail(std::map<Key<GuardRail>, GuardRail>& map, const GuardRailArray& msg); */
-/* void updateSideWalk(std::map<Key<SideWalk>, SideWalk>& map, const SideWalkArray& msg); */
-/* void updateDriveOnPortion(std::map<Key<DriveOnPortion>, DriveOnPortion>& map, const DriveOnPortionArray& msg); */
-/* void updateCrossRoad(std::map<Key<CrossRoad>, CrossRoad>& map, const CrossRoadArray& msg); */
-/* void updateSideStrip(std::map<Key<SideStrip>, SideStrip>& map, const SideStripArray& msg); */
-/* void updateCurveMirror(std::map<Key<CurveMirror>, CurveMirror>& map, const CurveMirrorArray& msg); */
-/* void updateWall(std::map<Key<Wall>, Wall>& map, const WallArray& msg); */
-/* void updateFence(std::map<Key<Fence>, Fence>& map, const FenceArray& msg); */
-/* void updateRailCrossing(std::map<Key<RailCrossing>, RailCrossing>& map, const RailCrossingArray& msg); */
-/* } // namespace */
+namespace
+{
+void updatePoint(std::map<Key<Point>, Point>& map, const PointArray& msg);
+void updateVector(std::map<Key<Vector>, Vector>& map, const VectorArray& msg);
+void updateLine(std::map<Key<Line>, Line>& map, const LineArray& msg);
+void updateArea(std::map<Key<Area>, Area>& map, const AreaArray& msg);
+void updatePole(std::map<Key<Pole>, Pole>& map, const PoleArray& msg);
+void updateBox(std::map<Key<Box>, Box>& map, const BoxArray& msg);
+void updateDTLane(std::map<Key<DTLane>, DTLane>& map, const DTLaneArray& msg);
+void updateNode(std::map<Key<Node>, Node>& map, const NodeArray& msg);
+void updateLane(std::map<Key<Lane>, Lane>& map, const LaneArray& msg);
+void updateWayArea(std::map<Key<WayArea>, WayArea>& map, const WayAreaArray& msg);
+void updateRoadEdge(std::map<Key<RoadEdge>, RoadEdge>& map, const RoadEdgeArray& msg);
+void updateGutter(std::map<Key<Gutter>, Gutter>& map, const GutterArray& msg);
+void updateCurb(std::map<Key<Curb>, Curb>& map, const CurbArray& msg);
+void updateWhiteLine(std::map<Key<WhiteLine>, WhiteLine>& map, const WhiteLineArray& msg);
+void updateStopLine(std::map<Key<StopLine>, StopLine>& map, const StopLineArray& msg);
+void updateZebraZone(std::map<Key<ZebraZone>, ZebraZone>& map, const ZebraZoneArray& msg);
+void updateCrossWalk(std::map<Key<CrossWalk>, CrossWalk>& map, const CrossWalkArray& msg);
+void updateRoadMark(std::map<Key<RoadMark>, RoadMark>& map, const RoadMarkArray& msg);
+void updateRoadPole(std::map<Key<RoadPole>, RoadPole>& map, const RoadPoleArray& msg);
+void updateRoadSign(std::map<Key<RoadSign>, RoadSign>& map, const RoadSignArray& msg);
+void updateSignal(std::map<Key<Signal>, Signal>& map, const SignalArray& msg);
+void updateStreetLight(std::map<Key<StreetLight>, StreetLight>& map, const StreetLightArray& msg);
+void updateUtilityPole(std::map<Key<UtilityPole>, UtilityPole>& map, const UtilityPoleArray& msg);
+void updateGuardRail(std::map<Key<GuardRail>, GuardRail>& map, const GuardRailArray& msg);
+void updateSideWalk(std::map<Key<SideWalk>, SideWalk>& map, const SideWalkArray& msg);
+void updateDriveOnPortion(std::map<Key<DriveOnPortion>, DriveOnPortion>& map, const DriveOnPortionArray& msg);
+void updateCrossRoad(std::map<Key<CrossRoad>, CrossRoad>& map, const CrossRoadArray& msg);
+void updateSideStrip(std::map<Key<SideStrip>, SideStrip>& map, const SideStripArray& msg);
+void updateCurveMirror(std::map<Key<CurveMirror>, CurveMirror>& map, const CurveMirrorArray& msg);
+void updateWall(std::map<Key<Wall>, Wall>& map, const WallArray& msg);
+void updateFence(std::map<Key<Fence>, Fence>& map, const FenceArray& msg);
+void updateRailCrossing(std::map<Key<RailCrossing>, RailCrossing>& map, const RailCrossingArray& msg);
+} // namespace
 
 class VectorMap
 {
@@ -389,7 +403,6 @@ public:
 
   void subscribe(ros::NodeHandle& nh, category_t category);
   void subscribe(ros::NodeHandle& nh, category_t category, const ros::Duration& timeout);
-  void subscribe(ros::NodeHandle& nh, category_t category, const size_t max_retries);
 
   Point findByKey(const Key<Point>& key) const;
   Vector findByKey(const Key<Vector>& key) const;

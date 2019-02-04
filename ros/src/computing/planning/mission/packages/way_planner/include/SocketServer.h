@@ -16,7 +16,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <pthread.h>
-#include "ROSHelpers.h"
+#include "RosHelpers.h"
 
 namespace WayPlannerNS
 {

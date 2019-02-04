@@ -874,9 +874,9 @@ void Tracking::UpdateLastFrame()
 {
     // Update pose according to reference keyframe
     KeyFrame* pRef = mLastFrame.mpReferenceKF;
-    cv::Mat TLR = mlRelativeFramePoses.back();
+    cv::Mat Tlr = mlRelativeFramePoses.back();
 
-    mLastFrame.SetPose(TLR*pRef->GetPose());
+    mLastFrame.SetPose(Tlr*pRef->GetPose());
 
     if(mnLastKeyFrameId==mLastFrame.mnId || mSensor==System::MONOCULAR)
         return;

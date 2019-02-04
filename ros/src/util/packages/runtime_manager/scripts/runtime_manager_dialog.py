@@ -1,18 +1,33 @@
 #!/usr/bin/env python
-#
-# Copyright 2015-2019 Autoware Foundation
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+"""
+  Copyright (c) 2015, Nagoya University
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  * Redistributions of source code must retain the above copyright notice, this
+    list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+
+  * Neither the name of Autoware nor the names of its
+    contributors may be used to endorse or promote products derived from
+    this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
 
 
 import wx
@@ -41,48 +56,43 @@ import rospy
 import std_msgs.msg
 from std_msgs.msg import Bool
 from decimal import Decimal
-from autoware_config_msgs.msg import ConfigSSD
-from autoware_config_msgs.msg import ConfigCarDPM
-from autoware_config_msgs.msg import ConfigPedestrianDPM
-from autoware_config_msgs.msg import ConfigNDT
-from autoware_config_msgs.msg import ConfigNDTMapping
-from autoware_config_msgs.msg import ConfigApproximateNDTMapping
-from autoware_config_msgs.msg import ConfigNDTMappingOutput
-from autoware_config_msgs.msg import ConfigICP
-from autoware_config_msgs.msg import ConfigVoxelGridFilter
-from autoware_config_msgs.msg import ConfigRingFilter
-from autoware_config_msgs.msg import ConfigDistanceFilter
-from autoware_config_msgs.msg import ConfigRandomFilter
-from autoware_config_msgs.msg import ConfigRingGroundFilter
-from autoware_config_msgs.msg import ConfigRayGroundFilter
-from autoware_config_msgs.msg import ConfigWaypointLoader
-from autoware_config_msgs.msg import ConfigWaypointFollower
-from autoware_config_msgs.msg import ConfigTwistFilter
-from autoware_config_msgs.msg import ConfigVelocitySet
-from autoware_config_msgs.msg import ConfigLatticeVelocitySet
-from autoware_config_msgs.msg import ConfigCarKF
-from autoware_config_msgs.msg import ConfigPedestrianKF
-from autoware_config_msgs.msg import ConfigLaneRule
-from autoware_config_msgs.msg import ConfigLaneSelect
-from autoware_config_msgs.msg import ConfigLaneStop
-from autoware_config_msgs.msg import ConfigCarFusion
-from autoware_config_msgs.msg import ConfigPedestrianFusion
-from autoware_config_msgs.msg import ConfigPlannerSelector
-from autoware_config_msgs.msg import ConfigDecisionMaker
-from autoware_config_msgs.msg import ConfigCompareMapFilter
+from autoware_msgs.msg import ConfigRcnn
+from autoware_msgs.msg import ConfigSsd
+from autoware_msgs.msg import ConfigCarDpm
+from autoware_msgs.msg import ConfigPedestrianDpm
+from autoware_msgs.msg import ConfigNdt
+from autoware_msgs.msg import ConfigNdtMapping
+from autoware_msgs.msg import ConfigNdtMappingOutput
+from autoware_msgs.msg import ConfigICP
+from autoware_msgs.msg import ConfigVoxelGridFilter
+from autoware_msgs.msg import ConfigRingFilter
+from autoware_msgs.msg import ConfigDistanceFilter
+from autoware_msgs.msg import ConfigRandomFilter
+from autoware_msgs.msg import ConfigWaypointFollower
+from autoware_msgs.msg import ConfigTwistFilter
+from autoware_msgs.msg import ConfigVelocitySet
+from autoware_msgs.msg import ConfigLatticeVelocitySet
+from autoware_msgs.msg import ConfigCarKf
+from autoware_msgs.msg import ConfigPedestrianKf
+from autoware_msgs.msg import ConfigLaneRule
+from autoware_msgs.msg import ConfigLaneSelect
+from autoware_msgs.msg import ConfigLaneStop
+from autoware_msgs.msg import ConfigCarFusion
+from autoware_msgs.msg import ConfigPedestrianFusion
 from tablet_socket_msgs.msg import mode_cmd
 from tablet_socket_msgs.msg import gear_cmd
 from tablet_socket_msgs.msg import Waypoint
 from tablet_socket_msgs.msg import route_cmd
+from autoware_msgs.msg import ndt_stat
 from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import Vector3
-from autoware_msgs.msg import AccelCmd
-from autoware_msgs.msg import SteerCmd
-from autoware_msgs.msg import BrakeCmd
-from autoware_msgs.msg import IndicatorCmd
-from autoware_msgs.msg import LampCmd
-from autoware_msgs.msg import TrafficLight
-from autoware_msgs.msg import AdjustXY
+from autoware_msgs.msg import accel_cmd
+from autoware_msgs.msg import steer_cmd
+from autoware_msgs.msg import brake_cmd
+from autoware_msgs.msg import indicator_cmd
+from autoware_msgs.msg import lamp_cmd
+from autoware_msgs.msg import traffic_light
+from autoware_msgs.msg import adjust_xy
 from types import MethodType
 
 SCHED_OTHER = 0
@@ -91,7 +101,7 @@ SCHED_RR = 2
 PROC_MANAGER_SOCK="/tmp/autoware_proc_manager"
 
 class MyFrame(rtmgr.MyFrame):
-
+		
 
 
 	def __init__(self, *args, **kwds):
@@ -113,7 +123,7 @@ class MyFrame(rtmgr.MyFrame):
 		# ros
 		#
 		rospy.init_node('runime_manager', anonymous=True)
-		rospy.Subscriber('to_rtmgr', std_msgs.msg.String, self.ROSCb)
+		rospy.Subscriber('to_rtmgr', std_msgs.msg.String, self.RosCb)
 		self.pub = rospy.Publisher('from_rtmgr', std_msgs.msg.String, queue_size=10)
 
 		#
@@ -208,7 +218,7 @@ class MyFrame(rtmgr.MyFrame):
 		#	self.OnProbe(None)
 		#	self.timer.Start(self.probe_interval)
 
-		self.dlg_rosbag_record = MyDialogROSbagRecord(self, cmd_dic=self.sensing_cmd)
+		self.dlg_rosbag_record = MyDialogRosbagRecord(self, cmd_dic=self.sensing_cmd)
 		buttons_color_hdr_setup(self.dlg_rosbag_record)
 
 		sense_cmds_dic = dic.get('cmds', {})
@@ -364,21 +374,11 @@ class MyFrame(rtmgr.MyFrame):
 		tab = self.tab_topics
 		self.all_tabs.append(tab)
 
-                #
-                # for State tab
-                #
-                tab = self.tab_states
-                self.all_tabs.append(tab)
-
-                self.state_dic = self.load_yaml('state.yaml')
-                self.mainstate_dic = self.state_dic["mainstate"]
-                self.substate_dic = self.state_dic["substate"]
-
 		#
 		# for All
 		#
 		self.bitmap_logo.Destroy()
-		bm = scaled_bitmap(wx.Bitmap(rtmgr_src_dir() + 'images/autoware_logo_1.png'), 0.2)
+		bm = scaled_bitmap(wx.Bitmap(rtmgr_src_dir() + 'autoware_logo_1.png'), 0.2)
 		self.bitmap_logo = wx.StaticBitmap(self, wx.ID_ANY, bm)
 
 		rtmgr.MyFrame.__do_layout(self)
@@ -390,7 +390,7 @@ class MyFrame(rtmgr.MyFrame):
 			[ [ self.obj_get('button_{}_{}'.format(bn, tn)) for tn in tab_names ] for bn in btn_names ] )
 
 		self.alias_grps = new_btn_grps( ('rosbag', 'rviz', 'rqt') )
-		self.alias_grps += new_btn_grps( ('android_tablet', 'oculus_rift', 'vehicle_gateway', 'remote_control', 'auto_pilot'),
+		self.alias_grps += new_btn_grps( ('android_tablet', 'oculus_rift', 'vehicle_gateway', 'auto_pilot'),
 						 ('qs', 'interface') )
 		for grp in self.alias_grps:
 			wx.CallAfter(self.alias_sync, get_top(grp))
@@ -480,11 +480,11 @@ class MyFrame(rtmgr.MyFrame):
 				subprocess.call([ 'mkdir', '-p', path ])
 
 		# icon
-		bm = scaled_bitmap(wx.Bitmap(rtmgr_src_dir() + 'images/autoware_logo_2_white.png'), 0.5)
+		bm = scaled_bitmap(wx.Bitmap(rtmgr_src_dir() + 'autoware_logo_2_white.png'), 0.5)
 		icon = wx.EmptyIcon()
 		icon.CopyFromBitmap(bm)
 		self.SetIcon(icon)
-
+	
 
 		wx.CallAfter( self.boot_booted_cmds )
 
@@ -682,7 +682,7 @@ class MyFrame(rtmgr.MyFrame):
 		msg = '{} booted commands menu ?'.format(s)
 		return (enable, msg)
 
-	def ROSCb(self, data):
+	def RosCb(self, data):
 		print('recv topic msg : ' + data.data)
 
 		r = rospy.Rate(10)
@@ -730,8 +730,7 @@ class MyFrame(rtmgr.MyFrame):
 		grp = { self.button_statchk_d : 1,
 			self.button_statchk_r : 2,
 			self.button_statchk_b : 3,
-			self.button_statchk_n : 4,
-                       self.button_statchk_p : 5 }
+			self.button_statchk_n : 4 }
 		self.radio_action(event, grp.keys())
 		v = grp.get(event.GetEventObject())
 		if v is not None:
@@ -739,15 +738,15 @@ class MyFrame(rtmgr.MyFrame):
 			pub.publish(gear_cmd(gear=v))
 
 	def OnLamp(self, event):
-		pub = rospy.Publisher('lamp_cmd', LampCmd, queue_size=10)
-		msg = LampCmd()
+		pub = rospy.Publisher('lamp_cmd', lamp_cmd, queue_size=10)
+		msg = lamp_cmd()
 		msg.l = self.button_statchk_lamp_l.GetValue()
 		msg.r = self.button_statchk_lamp_r.GetValue()
 		pub.publish(msg)
 
 	def OnIndi(self, event):
-		pub = rospy.Publisher('indicator_cmd', IndicatorCmd, queue_size=10)
-		msg = IndicatorCmd()
+		pub = rospy.Publisher('indicator_cmd', indicator_cmd, queue_size=10)
+		msg = indicator_cmd()
 		msg.l = self.button_statchk_indi_l.GetValue()
 		msg.r = self.button_statchk_indi_r.GetValue()
 		pub.publish(msg)
@@ -758,8 +757,8 @@ class MyFrame(rtmgr.MyFrame):
 		v = obj.GetValue()
 		pub = rospy.Publisher('mode_cmd', mode_cmd, queue_size=10)
 		pub.publish(mode_cmd(mode=v))
-
-
+	
+	
 
 	def radio_action(self, event, grp):
 		push = event.GetEventObject()
@@ -1017,11 +1016,12 @@ class MyFrame(rtmgr.MyFrame):
 		return ( d.get('pdic'), d.get('gdic'), d.get('param') )
 
 	def update_func(self, pdic, gdic, prm):
+		pdic_empty = (pdic == {})
 		for var in prm.get('vars', []):
 			name = var.get('name')
 			gdic_v = gdic.get(name, {})
 			func = gdic_v.get('func')
-			if func is None and name in pdic:
+			if func is None and not pdic_empty:
 				continue
 			v = var.get('v')
 			if func is not None:
@@ -1163,8 +1163,8 @@ class MyFrame(rtmgr.MyFrame):
 	def OnSensingDriver(self, event):
 		self.OnChecked_obj(event.GetEventObject())
 
-	def OnROSbagRecord(self, event):
-		self.dlg_rosbag_record.show()
+	def OnRosbagRecord(self, event):
+		self.dlg_rosbag_record.Show()
 		obj = event.GetEventObject()
 		set_val(obj, False)
 
@@ -1694,23 +1694,6 @@ class MyFrame(rtmgr.MyFrame):
 
 			if self.checkbox_topics_echo.GetValue():
 				wx.CallAfter(append_tc_limit, tc, s, rm_chars)
-        #
-        # State Tabs
-        #
-        def getStateId(self, s_text):
-                if(self.mainstate_dic.has_key(s_text)):
-                    return self.mainstate_dic[s_text]
-                elif(self.substate_dic.has_key(s_text)):
-                    return self.substate_dic[s_text]
-                else :
-                    return -99
-
-        def OnState(self, event):
-                pub = rospy.Publisher('state_cmd', std_msgs.msg.Int32, queue_size=10)
-                msg = std_msgs.msg.Int32()
-                clicked_event = event.GetEventObject()
-                msg.data = self.getStateId(clicked_event.GetLabel())
-                pub.publish(msg)
 
 	#
 	# Common Utils
@@ -1784,7 +1767,7 @@ class MyFrame(rtmgr.MyFrame):
 		if proc:
 			self.update_proc_cpu(obj)
 
-	def OnROSbagPlay(self, event):
+	def OnRosbagPlay(self, event):
 		obj = event.GetEventObject()
 
 		play = self.button_play_rosbag_play
@@ -1936,7 +1919,7 @@ class MyFrame(rtmgr.MyFrame):
 					self.new_link(item, name, pdic, gdic, pnl, 'app', items.get('param'), add_objs)
 				else:
 					self.add_cfg_info(item, item, name, None, gdic, False, None)
-				szr = sizer_wrap(add_objs, wx.HORIZONTAL, flag=wx.ALIGN_CENTER_VERTICAL, parent=pnl)
+				szr = sizer_wrap(add_objs, wx.HORIZONTAL, parent=pnl)
 				szr.Fit(pnl)
 				tree.SetItemWindow(item, pnl)
 
@@ -1948,8 +1931,6 @@ class MyFrame(rtmgr.MyFrame):
 		lkc = None
 		if 'no_link' not in gdic.get('flags', []):
 			lkc = wx.HyperlinkCtrl(pnl, wx.ID_ANY, link_str, "")
-			if hasattr(lkc, 'SetCanFocus'):
-				lkc.SetCanFocus(False)
 			fix_link_color(lkc)
 			self.Bind(wx.EVT_HYPERLINK, self.OnHyperlinked, lkc)
 			if len(add_objs) > 0:
@@ -2342,14 +2323,6 @@ class VarPanel(wx.Panel):
 		if self.kind == 'hide':
 			self.Hide()
 			return
-		if self.kind == 'topic':
-			topic_type = self.var.get('topic_type')
-			topics = self._get_topics_by_type(topic_type)
-			self.obj = wx.ComboBox(self, id=wx.ID_ANY, value=v, choices=topics, style=wx.CB_DROPDOWN, size=(130,-1))
-			self.lb = wx.StaticText(self, wx.ID_ANY, label)
-			flag = wx.LEFT | wx.ALIGN_CENTER_VERTICAL
-			sizer_wrap((self.lb, self.obj), wx.HORIZONTAL, 0, flag, 4, self)
-			return
 
 		szr = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -2364,7 +2337,7 @@ class VarPanel(wx.Panel):
 
 		style = wx.TE_PROCESS_ENTER + wx_flag_get( self.var.get('str_flags', []) )
 
-		self.tc = wx.TextCtrl(self, wx.ID_ANY, str(v), style=style, size=(130,-1))
+		self.tc = wx.TextCtrl(self, wx.ID_ANY, str(v), style=style)
 		self.Bind(wx.EVT_TEXT_ENTER, self.OnUpdate, self.tc)
 
 		if self.kind in ('num', None):
@@ -2396,19 +2369,11 @@ class VarPanel(wx.Panel):
 
 		if self.has_slider or self.kind == 'num':
 			vszr = wx.BoxSizer(wx.VERTICAL)
-			vszr.Add( self.create_bmbtn("images/inc.png", self.OnIncBtn) )
-			vszr.Add( self.create_bmbtn("images/dec.png", self.OnDecBtn) )
+			vszr.Add( self.create_bmbtn("inc.png", self.OnIncBtn) )
+			vszr.Add( self.create_bmbtn("dec.png", self.OnDecBtn) )
 			szr.Add(vszr, 0, wx.ALIGN_CENTER_VERTICAL)
 
 		self.SetSizer(szr)
-
-	def _get_topics_by_type(self, message_type):
-		#get list of current available topics:
-		ros_topics = rospy.get_published_topics()
-		matched_topics = list(filter(lambda x: x[1]==message_type,ros_topics))
-		topic_names = [x[0] for x in matched_topics]
-		topic_names.sort()
-		return topic_names
 
 	def setup_tooltip(self):
 		if get_tooltips(self.var):
@@ -2428,7 +2393,7 @@ class VarPanel(wx.Panel):
 	def get_v(self):
 		if self.kind in [ 'radio_box', 'menu' ]:
 			return self.choices_sel_get()
-		if self.kind in [ 'checkbox', 'toggle_button', 'topic' ]:
+		if self.kind in [ 'checkbox', 'toggle_button' ]:
 			return self.obj.GetValue()
 		if self.kind == 'checkboxes':
 			return self.obj.get()
@@ -2548,13 +2513,13 @@ class MyDialogParam(rtmgr.MyDialogParam):
 	def OnClose(self, event):
 		self.OnCancel(event)
 
-class MyDialogDPM(rtmgr.MyDialogDPM):
+class MyDialogDpm(rtmgr.MyDialogDpm):
 	def __init__(self, *args, **kwds):
 		pdic = kwds.pop('pdic')
 		self.pdic_bak = pdic.copy()
 		gdic = kwds.pop('gdic')
 		prm = kwds.pop('prm')
-		rtmgr.MyDialogDPM.__init__(self, *args, **kwds)
+		rtmgr.MyDialogDpm.__init__(self, *args, **kwds)
 		set_size_gdic(self, gdic)
 
 		self.Bind(wx.EVT_CLOSE, self.OnClose)
@@ -2668,13 +2633,13 @@ class MyDialogLaneStop(rtmgr.MyDialogLaneStop):
 	def OnCancel(self, event):
 		self.EndModal(-1)
 
-class MyDialogNDTMapping(rtmgr.MyDialogNDTMapping):
+class MyDialogNdtMapping(rtmgr.MyDialogNdtMapping):
 	def __init__(self, *args, **kwds):
 		self.pdic = kwds.pop('pdic')
 		self.pdic_bak = self.pdic.copy()
 		self.gdic = kwds.pop('gdic')
 		self.prm = kwds.pop('prm')
-		rtmgr.MyDialogNDTMapping.__init__(self, *args, **kwds)
+		rtmgr.MyDialogNdtMapping.__init__(self, *args, **kwds)
 		set_size_gdic(self)
 
 		parent = self.panel_v
@@ -2683,7 +2648,7 @@ class MyDialogNDTMapping(rtmgr.MyDialogNDTMapping):
 		sizer_wrap((self.panel,), wx.VERTICAL, 1, wx.EXPAND, 0, parent)
 
 		self.update_filename()
-		self.klass_msg = ConfigNDTMappingOutput
+		self.klass_msg = ConfigNdtMappingOutput
 		self.pub = rospy.Publisher('/config/ndt_mapping_output', self.klass_msg, queue_size=10)
 
 	def update_filename(self):
@@ -2711,32 +2676,6 @@ class MyDialogNDTMapping(rtmgr.MyDialogNDTMapping):
 		msg = self.klass_msg()
 		msg.filename = self.text_ctrl_path.GetValue()
 		msg.filter_res = str_to_float(v)
-		self.pub.publish(msg)
-
-	def OnOk(self, event):
-		self.panel.detach_func()
-		self.EndModal(0)
-
-class MyDialogWaypointLoader(rtmgr.MyDialogWaypointLoader):
-	def __init__(self, *args, **kwds):
-		self.pdic = kwds.pop('pdic')
-		self.pdic_bak = self.pdic.copy()
-		self.gdic = kwds.pop('gdic')
-		self.prm = kwds.pop('prm')
-		rtmgr.MyDialogWaypointLoader.__init__(self, *args, **kwds)
-		set_size_gdic(self)
-
-		parent = self.panel_v
-		frame = self.GetParent()
-		self.panel = ParamPanel(parent, frame=frame, pdic=self.pdic, gdic=self.gdic, prm=self.prm)
-		sizer_wrap((self.panel,), wx.VERTICAL, 1, wx.EXPAND, 0, parent)
-
-		self.klass_msg = Bool
-		self.pub = rospy.Publisher('/config/waypoint_loader_output', self.klass_msg, queue_size=10)
-
-	def OnCsvOutput(self, event):
-		msg = self.klass_msg()
-		msg.data = True
 		self.pub.publish(msg)
 
 	def OnOk(self, event):
@@ -2893,10 +2832,10 @@ class MyApp(wx.App):
 		frame_1.Show()
 		return 1
 
-class MyDialogROSbagRecord(rtmgr.MyDialogROSbagRecord):
+class MyDialogRosbagRecord(rtmgr.MyDialogRosbagRecord):
 	def __init__(self, *args, **kwds):
 		self.cmd_dic = kwds.pop('cmd_dic')
-		rtmgr.MyDialogROSbagRecord.__init__(self, *args, **kwds)
+		rtmgr.MyDialogRosbagRecord.__init__(self, *args, **kwds)
 		self.cbs = []
 		self.refresh()
 		self.parent = self.GetParent()
@@ -2963,9 +2902,6 @@ class MyDialogROSbagRecord(rtmgr.MyDialogROSbagRecord):
 			self.cbs.append(obj)
 		szr.Layout()
 		panel.SetVirtualSize(szr.GetMinSize())
-
-	def show(self):
-		self.Show()
 		self.update_filename()
 
 	def update_filename(self):
@@ -2973,7 +2909,7 @@ class MyDialogROSbagRecord(rtmgr.MyDialogROSbagRecord):
 		path = tc.GetValue()
 		(dn, fn) = os.path.split(path)
 		now = datetime.datetime.now()
-		fn = 'autoware-%04d%02d%02d%02d%02d%02d' % (
+		fn = 'autoware-%04d%02d%02d%02d%02d%02d.rosbag' % (
 			now.year, now.month, now.day, now.hour, now.minute, now.second)
 		path = os.path.join(dn, fn)
 		set_path(tc, path)
@@ -3411,7 +3347,7 @@ def set_scheduling_policy(proc, policy, priority):
 		"priority": priority,
 	}
 	return send_to_proc_manager(order)
-
+	
 # psutil 3.x to 1.x backward compatibility
 def get_cpu_count():
 	try:

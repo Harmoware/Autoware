@@ -1,5 +1,5 @@
 /*
-**                Copyright 2012 by Kvaser AB, Mï¿½lndal, Sweden
+**                Copyright 2012 by Kvaser AB, Mölndal, Sweden
 **                        http://www.kvaser.com
 **
 ** This software is dual licensed under the following two licenses:
@@ -62,7 +62,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <ros/ros.h>
-#include "autoware_can_msgs/CANPacket.h"
+#include "kvaser/CANPacket.h"
 
 int i = 0;
 unsigned char willExit = 0;
@@ -94,12 +94,12 @@ int main (int argc, char *argv[])
   int channel = 0;
   int bitrate = BAUD_500K;
   int j;
-	autoware_can_msgs::CANPacket candat;
+  kvaser::CANPacket candat;
 
   ros::init(argc, argv, "can_listener");
   ros::NodeHandle n;
  
-  ros::Publisher can_pub = n.advertise<autoware_can_msgs::CANPacket>("can_raw", 10);
+  ros::Publisher can_pub = n.advertise<kvaser::CANPacket>("can_raw", 10);
 
   errno = 0;
   if (argc != 2 || (channel = atoi(argv[1]), errno) != 0) {

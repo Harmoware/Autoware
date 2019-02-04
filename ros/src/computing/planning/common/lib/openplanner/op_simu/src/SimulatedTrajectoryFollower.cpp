@@ -5,8 +5,8 @@
  *      Author: hatem
  */
 
-#include "op_simu/SimulatedTrajectoryFollower.h"
-#include "op_planner/PlanningHelpers.h"
+#include "SimulatedTrajectoryFollower.h"
+#include "PlanningHelpers.h"
 #include <cmath>
 #include <stdlib.h>
 #include <iostream>

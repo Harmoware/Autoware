@@ -248,8 +248,7 @@ void CrossWalk::setCrossWalkPoints()
   set_points = true;
 }
 
-int CrossWalk::findClosestCrosswalk(const int closest_waypoint, const autoware_msgs::Lane &lane,
-                                    const int search_distance)
+int CrossWalk::findClosestCrosswalk(const int closest_waypoint, const autoware_msgs::lane& lane, const int search_distance)
 {
   if (!set_points || closest_waypoint < 0)
     return -1;
@@ -257,13 +256,8 @@ int CrossWalk::findClosestCrosswalk(const int closest_waypoint, const autoware_m
   double find_distance = 2.0 * 2.0;      // meter
   double ignore_distance = 20.0 * 20.0;  // meter
   static std::vector<int> bdid = getBDID();
-
-  int _return_val = 0;
-
-  initDetectionCrossWalkIDs();  // for multiple
-
   // Find near cross walk
-  for (int num = closest_waypoint; num < closest_waypoint + search_distance && num < (int)lane.waypoints.size(); num++)
+  for (int num = closest_waypoint; num < closest_waypoint + search_distance; num++)
   {
     geometry_msgs::Point waypoint = lane.waypoints[num].pose.pose.position;
     waypoint.z = 0.0;  // ignore Z axis
@@ -280,34 +274,23 @@ int CrossWalk::findClosestCrosswalk(const int closest_waypoint, const autoware_m
         p.z = waypoint.z;
         if (calcSquareOfLength(p, waypoint) < find_distance)
         {
-          addDetectionCrossWalkIDs(i);
-          if (!this->isMultipleDetection())
-          {
-            setDetectionCrossWalkID(i);
-            return num;
-          }
-          else if (!_return_val)
-          {
-            setDetectionCrossWalkID(i);
-            _return_val = num;
-          }
+          setDetectionCrossWalkID(i);
+          return num;
         }
       }
     }
   }
 
-  if (_return_val)
-    return _return_val;
-
   setDetectionCrossWalkID(-1);
   return -1;  // no near crosswalk
+
 }
 
 geometry_msgs::Point ObstaclePoints::getObstaclePoint(const EControl &kind) const
 {
   geometry_msgs::Point point;
 
-  if (kind == EControl::STOP || kind == EControl::STOPLINE)
+  if (kind == EControl::STOP)
   {
     for (const auto &p : stop_points_)
     {
@@ -321,7 +304,7 @@ geometry_msgs::Point ObstaclePoints::getObstaclePoint(const EControl &kind) cons
 
     return point;
   }
-  else  // kind == DECELERATE
+  else // kind == DECELERATE
   {
     for (const auto &p : decelerate_points_)
     {

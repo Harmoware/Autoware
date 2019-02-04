@@ -1,21 +1,41 @@
 /*
- * Copyright 2015-2019 Autoware Foundation. All rights reserved.
+ *  Copyright (c) 2015, Nagoya University
+ *  All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  * Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ *  * Neither the name of Autoware nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ *  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #include <ros/ros.h>
-#include "autoware_msgs/VehicleCmd.h"
+#include <geometry_msgs/TwistStamped.h>
+#include <tablet_socket_msgs/mode_cmd.h>
+#include <tablet_socket_msgs/gear_cmd.h>
+#include "autoware_msgs/accel_cmd.h"
+#include "autoware_msgs/brake_cmd.h"
+#include "autoware_msgs/steer_cmd.h"
+#include "autoware_msgs/ControlCommandStamped.h"
 
 #include <iostream>
 #include <string>
@@ -32,7 +52,6 @@ struct CommandData {
   double angular_z;
   int modeValue;
   int gearValue;
-  int lampValue;
   int accellValue;
   int brakeValue;
   int steerValue;
@@ -44,43 +63,78 @@ struct CommandData {
 
 void CommandData::reset()
 {
-  linear_x      = 0;
-  angular_z     = 0;
-  modeValue     = 0;
-  gearValue     = 0;
-  lampValue     = 0;
-  accellValue   = 0;
-  brakeValue    = 0;
-  steerValue    = 0;
+  linear_x    = 0;
+  angular_z   = 0;
+  modeValue   = 0;
+  gearValue   = 0;
+  accellValue = 0;
+  brakeValue  = 0;
+  steerValue  = 0;
   linear_velocity = -1;
   steering_angle = 0;
 }
 
 static CommandData command_data;
+int ENABLE_VELOCITY_ONLY_TEST = 0;
 
-static void vehicleCmdCallback(const autoware_msgs::VehicleCmd& msg)
+static void twistCMDCallback(const geometry_msgs::TwistStamped& msg)
 {
-  command_data.linear_x = msg.twist_cmd.twist.linear.x;
-  command_data.angular_z = msg.twist_cmd.twist.angular.z;
-  command_data.modeValue = msg.mode;
-  command_data.gearValue = msg.gear;
-  if(msg.lamp_cmd.l == 0 && msg.lamp_cmd.r == 0) {
-    command_data.lampValue = 0;
+	if(ENABLE_VELOCITY_ONLY_TEST == 1)
+	{
+		command_data.linear_x = msg.twist.linear.x;
+		command_data.angular_z = 0;
+	}
+	else
+	{
+		command_data.linear_x = msg.twist.linear.x;
+		command_data.angular_z = msg.twist.angular.z;
+	}
+  //std::cout << "Sending Twist Command Data To ZMP PC !!" << std::endl;
+}
+
+static void modeCMDCallback(const tablet_socket_msgs::mode_cmd& mode)
+{
+  if(mode.mode == -1 || mode.mode == 0){
+    command_data.reset();
   }
-  else if (msg.lamp_cmd.l == 1 && msg.lamp_cmd.r == 0) {
-    command_data.lampValue = 1;
-  }
-  else if (msg.lamp_cmd.l == 0 && msg.lamp_cmd.r == 1) {
-    command_data.lampValue = 2;
-  }
-  else if (msg.lamp_cmd.l == 1 && msg.lamp_cmd.r == 1) {
-    command_data.lampValue = 3;
-  }
-  command_data.accellValue = msg.accel_cmd.accel;
-  command_data.steerValue = msg.steer_cmd.steer;
-  command_data.brakeValue = msg.brake_cmd.brake;
-  command_data.linear_velocity = msg.ctrl_cmd.linear_velocity;
-  command_data.steering_angle = msg.ctrl_cmd.steering_angle;
+
+  command_data.modeValue = mode.mode;
+}
+
+static void gearCMDCallback(const tablet_socket_msgs::gear_cmd& gear)
+{
+  command_data.gearValue = gear.gear;
+}
+
+static void accellCMDCallback(const autoware_msgs::accel_cmd& accell)
+{
+  command_data.accellValue = accell.accel;
+}
+
+static void steerCMDCallback(const autoware_msgs::steer_cmd& steer)
+{
+	if(ENABLE_VELOCITY_ONLY_TEST == 0)
+		command_data.steerValue = steer.steer;
+}
+
+static void brakeCMDCallback(const autoware_msgs::brake_cmd &brake)
+{
+  command_data.brakeValue = brake.brake;
+}
+
+static void ctrlCMDCallback(const autoware_msgs::ControlCommandStamped& msg)
+{
+	if(ENABLE_VELOCITY_ONLY_TEST == 1)
+	{
+		command_data.linear_velocity = msg.cmd.linear_velocity;
+		command_data.steering_angle = 0;
+	}
+	else
+	{
+		command_data.linear_velocity = msg.cmd.linear_velocity;
+		command_data.steering_angle = msg.cmd.steering_angle;
+	}
+  //std::cout << "Sending Control Command Data To ZMP PC !!" << std::endl;
 }
 
 static void *sendCommand(void *arg)
@@ -95,11 +149,10 @@ static void *sendCommand(void *arg)
   oss << command_data.modeValue << ",";
   oss << command_data.gearValue << ",";
   oss << command_data.accellValue << ",";
-  oss << command_data.brakeValue << ",";
   oss << command_data.steerValue << ",";
+  oss << command_data.brakeValue << ",";
   oss << command_data.linear_velocity << ",";
-  oss << command_data.steering_angle << ",";
-  oss << command_data.lampValue;
+  oss << command_data.steering_angle;
 
   std::string cmd(oss.str());
   ssize_t n = write(client_sock, cmd.c_str(), cmd.size());
@@ -107,7 +160,7 @@ static void *sendCommand(void *arg)
     std::perror("write");
     return nullptr;
   }
-
+  
   if(close(client_sock) == -1){
     std::perror("close");
     return nullptr;
@@ -120,6 +173,8 @@ static void *sendCommand(void *arg)
 static void* receiverCaller(void *unused)
 {
   constexpr int listen_port = 10001;
+
+
 
   int sock = socket(AF_INET, SOCK_STREAM, 0);
   if(sock == -1){
@@ -183,8 +238,15 @@ int main(int argc, char **argv)
   ros::init(argc ,argv, "vehicle_sender") ;
   ros::NodeHandle nh;
 
-  std::cout << "vehicle sender" << std::endl;
-  ros::Subscriber sub = nh.subscribe("/vehicle_cmd", 1, vehicleCmdCallback);
+  std::cout << "vehicle sender bla bla bla !!!!! " << std::endl;
+  ros::Subscriber sub[7];
+  sub[0] = nh.subscribe("/twist_cmd", 1, twistCMDCallback);
+  sub[1] = nh.subscribe("/mode_cmd",  1, modeCMDCallback);
+  sub[2] = nh.subscribe("/gear_cmd",  1, gearCMDCallback);
+  sub[3] = nh.subscribe("/accel_cmd", 1, accellCMDCallback);
+  sub[4] = nh.subscribe("/steer_cmd", 1, steerCMDCallback);
+  sub[5] = nh.subscribe("/brake_cmd", 1, brakeCMDCallback);
+  sub[6] = nh.subscribe("/ctrl_cmd", 1, ctrlCMDCallback);
 
   command_data.reset();
 

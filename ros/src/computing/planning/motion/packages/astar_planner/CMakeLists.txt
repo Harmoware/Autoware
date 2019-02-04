@@ -1,12 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(astar_planner)
 
-
-find_package(autoware_build_flags REQUIRED)
-
-find_package(autoware_msgs REQUIRED)
-
-find_package(vector_map REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
@@ -15,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   waypoint_follower
   autoware_msgs 
+  vector_map
 )
 
 ###################################
@@ -28,12 +23,10 @@ catkin_package(
 ## Build ##
 ###########
 
-SET(CMAKE_CXX_FLAGS "-O2 -g -Wall ${CMAKE_CXX_FLAGS}")
+SET(CMAKE_CXX_FLAGS "-std=c++11 -O2 -g -Wall ${CMAKE_CXX_FLAGS}")
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  ${vector_map_INCLUDE_DIRS}
-  ${autoware_msgs_INCLUDE_DIRS}
 )
 
 add_executable(velocity_set nodes/velocity_set/velocity_set.cpp nodes/velocity_set/velocity_set_path.cpp nodes/velocity_set/velocity_set_info.cpp nodes/velocity_set/libvelocity_set.cpp)
@@ -45,6 +38,4 @@ add_executable(obstacle_avoid nodes/obstacle_avoid/obstacle_avoid.cpp nodes/obst
 target_link_libraries(obstacle_avoid ${catkin_LIBRARIES})
 add_dependencies(obstacle_avoid ${catkin_EXPORTED_TARGETS})
 
-add_executable(obstacle_sim nodes/obstacle_avoid/obstacle_sim/obstacle_sim.cpp nodes/obstacle_avoid/obstacle_sim/obstacle_sim_node.cpp)
-target_link_libraries(obstacle_sim ${catkin_LIBRARIES})
-add_dependencies(obstacle_sim ${catkin_EXPORTED_TARGETS})
+

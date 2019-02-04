@@ -1,40 +1,43 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ndt_tku)
 
+execute_process(
+  COMMAND rosversion -d
+  OUTPUT_VARIABLE ROS_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if ("${ROS_VERSION}" MATCHES "(indigo|jade)")
+find_package(catkin REQUIRED)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
-find_package(catkin REQUIRED COMPONENTS)
 
 catkin_package(
-        INCLUDE_DIRS include
-        LIBRARIES ndt_tku
+  INCLUDE_DIRS include
+  LIBRARIES ndt_tku
+#  CATKIN_DEPENDS other_catkin_pkg
+#  DEPENDS system_lib
 )
 
-find_package(GLUT REQUIRED)
+###########
+## Build ##
+###########
 
 include_directories(
-        include
-        ${catkin_INCLUDE_DIRS}
-        ${GLUT_INCLUDE_DIRS}
+  include
 )
 
-add_library(ndt_tku
-        src/algebra.cpp
-        src/newton.cpp
-        src/manage_ND.cpp
-        )
+add_library(ndt_tku src/algebra.cpp src/newton.cpp)
 
-target_link_libraries(ndt_tku
-        ${catkin_LIBRARIES}
-        ${GLUT_LIBRARIES})
+#############
+## Install ##
+#############
 
-install(TARGETS ndt_tku
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
-
-install(DIRECTORY include/
-        DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
-        PATTERN ".svn" EXCLUDE
-        )
+#install(
+#  DIRECTORY include
+#  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#  FILES_MATCHING PATTERN "*.hh"
+#)
+endif()

@@ -1,4 +1,4 @@
-#include "fastvirtualscan/fastvirtualscan.h"
+#include "fastvirtualscan.h"
 
 #define MAXVIRTUALSCAN 1e6
 

@@ -1,18 +1,32 @@
 /*
- * Copyright 2015-2019 Autoware Foundation. All rights reserved.
+ *  Copyright (c) 2015, Nagoya University
+ *  All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  * Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ *  * Neither the name of Autoware nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ *  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #include <ros/ros.h>
 #include <std_msgs/String.h>
@@ -24,82 +38,76 @@
 #include <iostream>
 #include <std_msgs/Int32.h>
 #include <random>
-
+#include <autoware_msgs/CanInfo.h>
 #include "waypoint_follower/libwaypoint_follower.h"
-#include "autoware_msgs/ControlCommandStamped.h"
 
 namespace
 {
+
+int ENABLE_VELOCITY_ONLY_TEST = 0;
+
+geometry_msgs::Twist _current_velocity;
+
 const std::string SIMULATION_FRAME = "sim_base_link";
-const std::string LIDAR_FRAME = "sim_lidar";
 const std::string MAP_FRAME = "map";
 
-bool initial_set_ = false;
-bool pose_set_ = false;
-bool waypoint_set_ = false;
-bool use_ctrl_cmd = false;
-bool is_closest_waypoint_subscribed_ = false;
+double g_actual_car_velocity = 0.0;
+//double g_actual_car_angular = 0.0;
 
-geometry_msgs::Pose initial_pose_;
-WayPoints current_waypoints_;
-geometry_msgs::Twist current_velocity_;
+geometry_msgs::Pose _initial_pose;
+bool _initial_set = false;
+bool _pose_set = false;
+bool _waypoint_set = false;
+bool g_is_closest_waypoint_subscribed = false;
+WayPoints _current_waypoints;
+ros::Publisher g_odometry_publisher;
+ros::Publisher g_velocity_publisher;
+int32_t g_closest_waypoint = -1;
+double g_position_error;
+double g_angle_error;
 
-ros::Publisher odometry_publisher_;
-ros::Publisher velocity_publisher_;
+constexpr int LOOP_RATE = 50; // 50Hz
 
-int32_t closest_waypoint_ = -1;
-double position_error_;
-double angle_error_;
-double linear_acceleration_ = 0;
-double steering_angle_ = 0;
-double lidar_height_ = 1.0;
-double wheel_base_ = 2.7;
-
-constexpr int LOOP_RATE = 50;  // 50Hz
-
-void CmdCallBack(const geometry_msgs::TwistStampedConstPtr& msg, double accel_rate)
+void CmdCallBack(const geometry_msgs::TwistStampedConstPtr &msg, double accel_rate)
 {
-  if (use_ctrl_cmd == true)
-    return;
 
   static double previous_linear_velocity = 0;
-
-  if (current_velocity_.linear.x < msg->twist.linear.x)
+  double temp_velocity = msg->twist.linear.x;
+  //double temp_angular  = msg->twist.angular.z;
+  if(ENABLE_VELOCITY_ONLY_TEST == 1)
   {
-    current_velocity_.linear.x = previous_linear_velocity + accel_rate / (double)LOOP_RATE;
+	  temp_velocity = g_actual_car_velocity;
+	  //temp_angular = g_actual_car_angular;
+  }
 
-    if (current_velocity_.linear.x > msg->twist.linear.x)
+  if(_current_velocity.linear.x < temp_velocity)
+  {
+    _current_velocity.linear.x = previous_linear_velocity + accel_rate / (double)LOOP_RATE;
+
+    if(_current_velocity.linear.x > temp_velocity)
     {
-      current_velocity_.linear.x = msg->twist.linear.x;
+      _current_velocity.linear.x = temp_velocity;
     }
   }
   else
   {
-    current_velocity_.linear.x = previous_linear_velocity - accel_rate / (double)LOOP_RATE;
+    _current_velocity.linear.x = previous_linear_velocity - accel_rate / (double)LOOP_RATE;
 
-    if (current_velocity_.linear.x < msg->twist.linear.x)
+    if(_current_velocity.linear.x < temp_velocity)
     {
-      current_velocity_.linear.x = msg->twist.linear.x;
+      _current_velocity.linear.x = temp_velocity;
     }
   }
 
-  previous_linear_velocity = current_velocity_.linear.x;
+  previous_linear_velocity = _current_velocity.linear.x;
 
-  current_velocity_.angular.z = msg->twist.angular.z;
+  _current_velocity.angular.z = msg->twist.angular.z;
 
-  //current_velocity_ = msg->twist;
+
+  //_current_velocity = msg->twist;
 }
 
-void controlCmdCallBack(const autoware_msgs::ControlCommandStampedConstPtr& msg)
-{
-  if (use_ctrl_cmd == false)
-    return;
-
-  linear_acceleration_ = msg->cmd.linear_acceleration;
-  steering_angle_ = msg->cmd.steering_angle;
-}
-
-void getTransformFromTF(const std::string parent_frame, const std::string child_frame, tf::StampedTransform& transform)
+void getTransformFromTF(const std::string parent_frame, const std::string child_frame, tf::StampedTransform &transform)
 {
   static tf::TransformListener listener;
 
@@ -118,45 +126,38 @@ void getTransformFromTF(const std::string parent_frame, const std::string child_
   }
 }
 
-void initialposeCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& input)
+void initialposeCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr &input)
 {
   tf::StampedTransform transform;
-  getTransformFromTF(MAP_FRAME, input->header.frame_id, transform);
+  getTransformFromTF(MAP_FRAME, "world", transform);
 
-  initial_pose_.position.x = input->pose.pose.position.x + transform.getOrigin().x();
-  initial_pose_.position.y = input->pose.pose.position.y + transform.getOrigin().y();
-  initial_pose_.position.z = input->pose.pose.position.z + transform.getOrigin().z();
-  initial_pose_.orientation = input->pose.pose.orientation;
+  _initial_pose.position.x = input->pose.pose.position.x + transform.getOrigin().x();
+  _initial_pose.position.y = input->pose.pose.position.y + transform.getOrigin().y();
+  _initial_pose.position.z = input->pose.pose.position.z + transform.getOrigin().z();
+  _initial_pose.orientation = input->pose.pose.orientation;
 
-  initial_set_ = true;
-  pose_set_ = false;
+  _initial_set = true;
+  _pose_set = false;
 }
 
-void callbackFromPoseStamped(const geometry_msgs::PoseStampedConstPtr& msg)
+void callbackFromPoseStamped(const geometry_msgs::PoseStampedConstPtr &msg)
 {
-  initial_pose_ = msg->pose;
-  initial_set_ = true;
+  _initial_pose = msg->pose;
+  _initial_set = true;
 }
 
-void waypointCallback(const autoware_msgs::LaneConstPtr& msg)
+void waypointCallback(const autoware_msgs::laneConstPtr &msg)
 {
-  current_waypoints_.setPath(*msg);
-  waypoint_set_ = true;
+  // _path_og.setPath(msg);
+  _current_waypoints.setPath(*msg);
+  _waypoint_set = true;
+  //ROS_INFO_STREAM("waypoint subscribed");
 }
 
-void callbackFromClosestWaypoint(const std_msgs::Int32ConstPtr& msg)
+void callbackFromClosestWaypoint(const std_msgs::Int32ConstPtr &msg)
 {
-  closest_waypoint_ = msg->data;
-  is_closest_waypoint_subscribed_ = true;
-}
-
-void updateVelocity()
-{
-  if (use_ctrl_cmd == false)
-    return;
-
-  current_velocity_.linear.x += linear_acceleration_ / (double)LOOP_RATE;
-  current_velocity_.angular.z = current_velocity_.linear.x * std::sin(steering_angle_) / wheel_base_;
+  g_closest_waypoint = msg->data;
+  g_is_closest_waypoint_subscribed = true;
 }
 
 void publishOdometry()
@@ -165,22 +166,33 @@ void publishOdometry()
   static ros::Time last_time = ros::Time::now();
   static geometry_msgs::Pose pose;
   static double th = 0;
-  static tf::TransformBroadcaster tf_broadcaster;
+  static tf::TransformBroadcaster odom_broadcaster;
 
-  if (!pose_set_)
+  if (!_pose_set)
   {
-    pose.position = initial_pose_.position;
-    pose.orientation = initial_pose_.orientation;
+    pose.position = _initial_pose.position;
+    pose.orientation = _initial_pose.orientation;
     th = tf::getYaw(pose.orientation);
     ROS_INFO_STREAM("pose set : (" << pose.position.x << " " << pose.position.y << " " << pose.position.z << " " << th
                                    << ")");
-    pose_set_ = true;
+    _pose_set = true;
   }
 
-  if (waypoint_set_ && is_closest_waypoint_subscribed_)
-    pose.position.z = current_waypoints_.getWaypointPosition(closest_waypoint_).z;
-  double vx = current_velocity_.linear.x;
-  double vth = current_velocity_.angular.z;
+  /*int closest_waypoint = getClosestWaypoint(_current_waypoints.getCurrentWaypoints(), pose);
+  if (closest_waypoint == -1)
+  {
+    ROS_INFO("cannot publish odometry because closest waypoint is -1.");
+    return;
+  }
+  else
+  {
+    pose.position.z = _current_waypoints.getWaypointPosition(closest_waypoint).z;
+  }
+*/if(_waypoint_set && g_is_closest_waypoint_subscribed)
+    pose.position.z = _current_waypoints.getWaypointPosition(g_closest_waypoint).z;
+
+  double vx = _current_velocity.linear.x;
+  double vth = _current_velocity.angular.z;
   current_time = ros::Time::now();
 
   // compute odometry in a typical way given the velocities of the robot
@@ -192,14 +204,20 @@ void publishOdometry()
   double rnd_value_th = rnd_dist(mt) - 1.0;
 
   double dt = (current_time - last_time).toSec();
-  double delta_x = (vx * cos(th)) * dt + rnd_value_x * position_error_;
-  double delta_y = (vx * sin(th)) * dt + rnd_value_y * position_error_;
-  double delta_th = vth * dt + rnd_value_th * angle_error_ * M_PI / 180;
+  double delta_x = (vx * cos(th)) * dt + rnd_value_x * g_position_error;
+  double delta_y = (vx * sin(th)) * dt + rnd_value_y * g_position_error;
+  double delta_th = vth * dt + rnd_value_th * g_angle_error * M_PI / 180;
 
   pose.position.x += delta_x;
   pose.position.y += delta_y;
   th += delta_th;
   pose.orientation = tf::createQuaternionMsgFromYaw(th);
+
+  // std::cout << "delta (x y th) : (" << delta_x << " " << delta_y << " " << delta_th << ")" << std::endl;
+  // std::cout << "current_velocity(linear.x angular.z) : (" << _current_velocity.linear.x << " " <<
+  // _current_velocity.angular.z << ")"<< std::endl;
+  //    std::cout << "current_pose : (" << pose.position.x << " " << pose.position.y<< " " << pose.position.z << " " <<
+  //    th << ")" << std::endl << std::endl;
 
   // first, we'll publish the transform over tf
   geometry_msgs::TransformStamped odom_trans;
@@ -212,18 +230,8 @@ void publishOdometry()
   odom_trans.transform.translation.z = pose.position.z;
   odom_trans.transform.rotation = pose.orientation;
 
-  // send odom transform
-  tf_broadcaster.sendTransform(odom_trans);
-
-  geometry_msgs::TransformStamped lidar_trans;
-  lidar_trans.header.stamp = odom_trans.header.stamp;
-  lidar_trans.header.frame_id = SIMULATION_FRAME;
-  lidar_trans.child_frame_id = LIDAR_FRAME;
-  lidar_trans.transform.translation.z += lidar_height_;
-  lidar_trans.transform.rotation.w = 1;
-
-  // send lidar transform
-  tf_broadcaster.sendTransform(lidar_trans);
+  // send the transform
+  odom_broadcaster.sendTransform(odom_trans);
 
   // next, we'll publish the odometry message over ROS
   std_msgs::Header h;
@@ -240,13 +248,20 @@ void publishOdometry()
   ts.twist.angular.z = vth;
 
   // publish the message
-  odometry_publisher_.publish(ps);
-  velocity_publisher_.publish(ts);
+  g_odometry_publisher.publish(ps);
+  g_velocity_publisher.publish(ts);
 
   last_time = current_time;
 }
+
+void callbackGetCanInfo(const autoware_msgs::CanInfoConstPtr &msg)
+{
+	g_actual_car_velocity = msg->speed/3.6;
+	//g_actual_car_angular = msg->twist.angular.z;
 }
-int main(int argc, char** argv)
+
+}
+int main(int argc, char **argv)
 {
   ros::init(argc, argv, "wf_simulator");
 
@@ -258,24 +273,23 @@ int main(int argc, char** argv)
   ROS_INFO_STREAM("initialize_source : " << initialize_source);
 
   double accel_rate;
-  private_nh.param("accel_rate", accel_rate, double(1.0));
+  private_nh.param("accel_rate",accel_rate,double(1.0));
   ROS_INFO_STREAM("accel_rate : " << accel_rate);
 
-  private_nh.param("position_error", position_error_, double(0.0));
-  private_nh.param("angle_error", angle_error_, double(0.0));
-  private_nh.param("lidar_height", lidar_height_, double(1.0));
-  private_nh.param("use_ctrl_cmd", use_ctrl_cmd, false);
 
-  nh.param("vehicle_info/wheel_base", wheel_base_, double(2.7));
-
+  private_nh.param("position_error", g_position_error, double(0.0));
+  private_nh.param("angle_error", g_angle_error, double(0.0));
   // publish topic
-  odometry_publisher_ = nh.advertise<geometry_msgs::PoseStamped>("sim_pose", 10);
-  velocity_publisher_ = nh.advertise<geometry_msgs::TwistStamped>("sim_velocity", 10);
+  g_odometry_publisher = nh.advertise<geometry_msgs::PoseStamped>("sim_pose", 10);
+  g_velocity_publisher = nh.advertise<geometry_msgs::TwistStamped>("sim_velocity", 10);
 
   // subscribe topic
-  ros::Subscriber cmd_subscriber =
-      nh.subscribe<geometry_msgs::TwistStamped>("twist_cmd", 10, boost::bind(CmdCallBack, _1, accel_rate));
-  ros::Subscriber control_cmd_subscriber = nh.subscribe("ctrl_cmd", 10, controlCmdCallBack);
+
+
+  //if(ENABLE_VELOCITY_ONLY_TEST == 1)
+  ros::Subscriber sub_can_info = nh.subscribe("/can_info", 1,	callbackGetCanInfo);
+
+  ros::Subscriber cmd_subscriber = nh.subscribe<geometry_msgs::TwistStamped>("twist_cmd", 10, boost::bind(CmdCallBack, _1, accel_rate));
   ros::Subscriber waypoint_subcscriber = nh.subscribe("base_waypoints", 10, waypointCallback);
   ros::Subscriber closest_sub = nh.subscribe("closest_waypoint", 10, callbackFromClosestWaypoint);
   ros::Subscriber initialpose_subscriber;
@@ -284,7 +298,7 @@ int main(int argc, char** argv)
   {
     initialpose_subscriber = nh.subscribe("initialpose", 10, initialposeCallback);
   }
-  else if (initialize_source == "lidar_localizer")
+  else if (initialize_source == "ndt_localizer")
   {
     initialpose_subscriber = nh.subscribe("ndt_pose", 10, callbackFromPoseStamped);
   }
@@ -302,13 +316,18 @@ int main(int argc, char** argv)
   {
     ros::spinOnce();  // check subscribe topic
 
-    if (!initial_set_)
+    /*if (!_waypoint_set)
+    {
+      loop_rate.sleep();
+      continue;
+    }*/
+
+    if (!_initial_set)
     {
       loop_rate.sleep();
       continue;
     }
 
-    updateVelocity();
     publishOdometry();
 
     loop_rate.sleep();

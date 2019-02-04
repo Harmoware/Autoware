@@ -24,10 +24,10 @@
 	<arg name="velocityGainKP" 				default="0.1"   />
 	<arg name="velocityGainKI" 				default="0.005" />
 	<arg name="velocityGainKD" 				default="0.1"   />
-	<arg name="maxAcceleration"				default="0.6"   />
-	<arg name="maxDeceleration"				default="-1.0"   />
+	<arg name="maxAcceleration"				default="1.5"   />
+	<arg name="maxDeceleration"				default="-1.5"   />
 	
-	<arg name="signal" 						default="0" /> <!-- 0 : simulation or 1 : vehicle or 2 : robot -->
+	<arg name="signal" 						default="1" /> <!-- 0 : simulation or 1 : vehicle or 2 : robot -->
 	<arg name="steerMode" 					default="angle" /> <!-- angle or torque -->
 	<arg name="driveMode" 					default="velocity" /> <!-- velocity or stroke -->
 	<arg name="bEnableLogs" 				default="true" /> 
@@ -35,7 +35,7 @@
 
 	<arg name="mapRecorder" 				default="0" /><!-- 0 or 1  -->
 	<arg name="mapDistance" 				default="100.0" /> <!-- meters -->
-	<arg name="mapDensity" 					default="0.5" /> <!-- meters -->
+	<arg name="mapDensity" 					default="1.0" /> <!-- meters -->
 	
 	<node pkg="ff_waypoint_follower" type="ff_waypoint_follower" name="ff_waypoint_follower" output="screen">
 	

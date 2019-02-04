@@ -1,24 +1,38 @@
 /*
- * Copyright 2015-2019 Autoware Foundation. All rights reserved.
+ *  Copyright (c) 2015, Nagoya University
+ *  All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  * Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ *  * Neither the name of Autoware nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ *  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #ifndef SEARCH_INFO_ROS_H
 #define SEARCH_INFO_ROS_H
 
 #include "astar_util.h"
-#include "autoware_msgs/Lane.h"
+#include "autoware_msgs/lane.h"
 #include "waypoint_follower/libwaypoint_follower.h"
 
 #include <nav_msgs/OccupancyGrid.h>
@@ -41,7 +55,7 @@ public:
   void goalCallback(const geometry_msgs::PoseStampedConstPtr &msg);
   void currentPoseCallback(const geometry_msgs::PoseStampedConstPtr &msg);
   void currentVelocityCallback(const geometry_msgs::TwistStampedConstPtr &msg);
-  void waypointsCallback(const autoware_msgs::LaneConstPtr &msg);
+  void waypointsCallback(const autoware_msgs::laneConstPtr &msg);
   void closestWaypointCallback(const std_msgs::Int32ConstPtr &msg);
   void obstacleWaypointCallback(const std_msgs::Int32ConstPtr &msg);
   void stateCallback(const std_msgs::StringConstPtr &msg);
@@ -87,11 +101,11 @@ public:
   {
     return current_velocity_mps_;
   }
-  autoware_msgs::Lane getSubscribedWaypoints() const
+  autoware_msgs::lane getSubscribedWaypoints() const
   {
     return subscribed_waypoints_;
   }
-  autoware_msgs::Lane getCurrentWaypoints() const
+  autoware_msgs::lane getCurrentWaypoints() const
   {
     return current_waypoints_;
   }
@@ -129,7 +143,7 @@ public:
   }
 
   // set method
-  void setCurrentWaypoints(const autoware_msgs::Lane &waypoints)
+  void setCurrentWaypoints(const autoware_msgs::lane &waypoints)
   {
     current_waypoints_ = waypoints;
   }
@@ -138,7 +152,7 @@ public:
   void reset();
 
 private:
-  double calcPathLength(const autoware_msgs::Lane &lane, const int start_waypoint_index,
+  double calcPathLength(const autoware_msgs::lane &lane, const int start_waypoint_index,
                         const int goal_waypoint_index) const;
 
   nav_msgs::OccupancyGrid map_;
@@ -172,8 +186,8 @@ private:
   int obstacle_waypoint_index_;
   int start_waypoint_index_;
   int goal_waypoint_index_;
-  autoware_msgs::Lane subscribed_waypoints_;
-  autoware_msgs::Lane current_waypoints_;
+  autoware_msgs::lane subscribed_waypoints_;
+  autoware_msgs::lane current_waypoints_;
   geometry_msgs::PoseStamped current_pose_;
   double current_velocity_mps_;
   std::string state_;

@@ -1,4 +1,5 @@
 #include"selectionwidget.h"
+#include"selectionwidget_moc.cpp"
 
 PlaneExtractor::PlaneExtractor(sensor_msgs::PointCloud2ConstPtr velodynePoints, int id, double neighborRadius, double distanceThreshold, QWidget *parent)
     : GLViewer(parent)
@@ -342,7 +343,7 @@ void PlaneExtractor::extractPlane(Eigen::Vector3d seed, Eigen::Matrix3d eigenvec
 }
 
 PointsExtractor::PointsExtractor(int imageSize, double maxRange, double gridSize)
-{
+{    
     pointsid=-1;
     imagesize=imageSize;
     maxrange=maxRange;

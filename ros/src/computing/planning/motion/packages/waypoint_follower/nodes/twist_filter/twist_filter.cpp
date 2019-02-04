@@ -1,17 +1,31 @@
 /*
- * Copyright 2015-2019 Autoware Foundation. All rights reserved.
+ *  Copyright (c) 2015, Nagoya University
+ *  All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  * Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ *  * Neither the name of Autoware nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ *  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <ros/ros.h>
@@ -19,7 +33,9 @@
 
 #include <iostream>
 
-#include "autoware_config_msgs/ConfigTwistFilter.h"
+#include "autoware_msgs/ConfigTwistFilter.h"
+#include "autoware_msgs/CanInfo.h"
+
 
 namespace {
 
@@ -28,10 +44,11 @@ ros::Publisher g_twist_pub;
 double g_lateral_accel_limit = 5.0;
 double g_lowpass_gain_linear_x = 0.0;
 double g_lowpass_gain_angular_z = 0.0;
+bool b_actual_car_velocity = false;
 constexpr double RADIUS_MAX = 9e10;
 constexpr double ERROR = 1e-8;
 
-void configCallback(const autoware_config_msgs::ConfigTwistFilterConstPtr &config)
+void configCallback(const autoware_msgs::ConfigTwistFilterConstPtr &config)
 {
   g_lateral_accel_limit = config->lateral_accel_limit;
   ROS_INFO("g_lateral_accel_limit = %lf",g_lateral_accel_limit);
@@ -70,6 +87,8 @@ void TwistCmdCallback(const geometry_msgs::TwistStampedConstPtr &msg)
   lowpass_linear_x = g_lowpass_gain_linear_x * lowpass_linear_x + (1 - g_lowpass_gain_linear_x) * tp.twist.linear.x;
   lowpass_angular_z = g_lowpass_gain_angular_z * lowpass_angular_z + (1 - g_lowpass_gain_angular_z) * tp.twist.angular.z;
 
+  if(lowpass_linear_x < 0)
+	  lowpass_linear_x*=-1;
   tp.twist.linear.x = lowpass_linear_x;
   tp.twist.angular.z = lowpass_angular_z;
 
@@ -77,6 +96,7 @@ void TwistCmdCallback(const geometry_msgs::TwistStampedConstPtr &msg)
   g_twist_pub.publish(tp);
 
 }
+
 } // namespace
 
 int main(int argc, char **argv)
@@ -86,9 +106,11 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
     ros::NodeHandle private_nh("~");
 
+
     ros::Subscriber twist_sub = nh.subscribe("twist_raw", 1, TwistCmdCallback);
     ros::Subscriber config_sub = nh.subscribe("config/twist_filter", 10, configCallback);
-    g_twist_pub = nh.advertise<geometry_msgs::TwistStamped>("twist_cmd", 1000);
+    g_twist_pub = nh.advertise<geometry_msgs::TwistStamped>("twist_cmd", 10);
+
 
     ros::spin();
     return 0;

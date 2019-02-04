@@ -1,9 +1,11 @@
-/// \file UtilityH.cpp
-/// \brief General Math and Control utility functions
-/// \author Hatem Darweesh
-/// \date May 14, 2016
+/*
+ * UtilityH.cpp
+ *
+ *  Created on: May 14, 2016
+ *      Author: hatem
+ */
 
-#include "op_utility/UtilityH.h"
+#include "UtilityH.h"
 #include <iostream>
 #include <sstream>
 #include <string.h>

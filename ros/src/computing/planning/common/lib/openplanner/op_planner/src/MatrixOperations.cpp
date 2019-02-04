@@ -1,9 +1,11 @@
-/// \file MatrixOperations.cpp
-/// \brief Simple matrix operations
-/// \author Hatem Darweesh
-/// \date Jun 19, 2016
+/*
+ * MatrixOperations.cpp
+ *
+ *  Created on: Jun 19, 2016
+ *      Author: hatem
+ */
 
-#include "op_planner/MatrixOperations.h"
+#include "MatrixOperations.h"
 
 namespace PlannerHNS {
 

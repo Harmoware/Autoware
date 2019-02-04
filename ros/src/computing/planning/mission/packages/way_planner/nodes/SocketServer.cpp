@@ -26,21 +26,23 @@ HMISocketServer::HMISocketServer()
 
 HMISocketServer::~HMISocketServer()
 {
-	std::cout << " >> Call The Constructor !!!!! " << std::endl;
+	std::cout << " >> Call The Destructor !!!!! " << std::endl;
 	HMISocketServer* pRet;
 
-	shutdown(m_Socket_send, SHUT_RDWR);
-	close(m_Socket_send);
-
-	shutdown(m_Socket_receive, SHUT_RDWR);
-	 close(m_Socket_receive);
-
 	m_bExitMainLoop = true;
-	if(sock_thread_tid_send>0)
-		pthread_join(sock_thread_tid_send, (void**)&pRet);
-
+	shutdown(m_Socket_receive, SHUT_RDWR);
 	if(sock_thread_tid_receive>0)
+	{
 		pthread_join(sock_thread_tid_receive, (void**)&pRet);
+	}
+	close(m_Socket_receive);
+
+	shutdown(m_Socket_send, SHUT_RDWR);
+	if(sock_thread_tid_send>0)
+	{
+		pthread_join(sock_thread_tid_send, (void**)&pRet);
+	}
+	close(m_Socket_send);
 
 	std::cout << " >> Destroy everything !!!!! " << std::endl;
 
@@ -60,8 +62,17 @@ int HMISocketServer::InitSocket(int port_send, int port_receive)
 		return -1;
 	  }
 
-	  sockaddr_in addr;
+	  int reuse = 1;
+	  int err = setsockopt(m_Socket_send, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+	  if(err == -1)
+	  {
+		  shutdown(m_Socket_send, SHUT_RDWR);
+		  close(m_Socket_send);
+		  std::perror("setsockopt");
+		  return -1;
+	  }
 
+	  sockaddr_in addr;
 	  std::memset(&addr, 0, sizeof(sockaddr_in));
 	  addr.sin_family = PF_INET;
 	  addr.sin_port = htons(m_ConnPortSend);
@@ -70,6 +81,8 @@ int HMISocketServer::InitSocket(int port_send, int port_receive)
 	  int ret = bind(m_Socket_send, (struct sockaddr *)&addr, sizeof(addr));
 	  if(ret == -1)
 	  {
+		  shutdown(m_Socket_send, SHUT_RDWR);
+		close(m_Socket_send);
 		std::perror("bind");
 		return -1;
 	  }
@@ -93,6 +106,15 @@ int HMISocketServer::InitSocket(int port_send, int port_receive)
 	  		return -1;
 	  	  }
 
+		   err = setsockopt(m_Socket_receive, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+		  if(err == -1)
+		  {
+			  shutdown(m_Socket_receive, SHUT_RDWR);
+			  close(m_Socket_receive);
+			  std::perror("setsockopt");
+			  return -1;
+		  }
+
 	  	  sockaddr_in addr_receive;
 
 	  	  std::memset(&addr_receive, 0, sizeof(sockaddr_in));
@@ -103,6 +125,8 @@ int HMISocketServer::InitSocket(int port_send, int port_receive)
 	  	  int ret_r = bind(m_Socket_receive, (struct sockaddr *)&addr_receive, sizeof(addr_receive));
 	  	  if(ret_r == -1)
 	  	  {
+	  		shutdown(m_Socket_receive, SHUT_RDWR);
+			close(m_Socket_receive);
 	  		std::perror("bind");
 	  		return -1;
 	  	  }
@@ -130,8 +154,8 @@ void* HMISocketServer::ThreadMainSend(void* pSock)
 	{
 		pthread_mutex_lock(&pS->sock_mutex_send);
 		HMI_MSG msg = pS->m_msg_send;
-		if(!pS->m_bLatestMsg_send)
-			msg.options.clear();
+//		if(!pS->m_bLatestMsg_send)
+//			msg.options.clear();
 		pS->m_bLatestMsg_send = false;
 		pthread_mutex_unlock(&pS->sock_mutex_send);
 
@@ -144,38 +168,31 @@ void* HMISocketServer::ThreadMainSend(void* pSock)
 		  socklen_t len = sizeof(client);
 
 		client_sock = accept(pS->m_Socket_send, reinterpret_cast<sockaddr*>(&client), &len);
-		if(client_sock == -1){
+		if(client_sock == -1)
+		{
 		  std::perror("accept");
 		  usleep(500);
-		continue;
+		  continue;
 		}
 
-		  std::ostringstream oss;
-		  oss << msg.type << ",";
-		  for(unsigned int i=0; i< msg.options.size(); i++)
-			  oss << msg.options.at(i) << ";";
-
-		  oss << "," << msg.current;
-		  oss << "," << msg.currID;
-		  oss << "," << msg.bErr ;
-		  oss << "," << msg.err_msg << ",";
-
-		  std::string cmd(oss.str());
+		  std::string cmd = msg.CreateStringMessage();
 		  ssize_t n = write(client_sock, cmd.c_str(), cmd.size());
-		  if(n < 0){
+		  if(n < 0)
+		  {
 		    std::perror("write");
 		    usleep(500);
 			continue;
 		  }
 
 		  shutdown(client_sock, SHUT_RDWR);
-		  if(close(client_sock) == -1){
+		  if(close(client_sock) == -1)
+		  {
 		    std::perror("close");
 		    usleep(500);
 			continue;
 		  }
 
-		  std::cout << "cmd: " << cmd << ", size: " << cmd.size() << std::endl;
+		//  std::cout << "cmd: " << cmd << ", size: " << cmd.size() << ", Options: " << msg.options.size()<<  std::endl;
 
 	}
 	return 0;

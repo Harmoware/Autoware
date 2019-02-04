@@ -1,14 +1,16 @@
-/// \file LocalPlannerH.cpp
-/// \brief OpenPlanner's local planing functions combines in one process, used in simulation vehicle and OpenPlanner old implementation like dp_planner node.
-/// \author Hatem Darweesh
-/// \date Dec 14, 2016
+/*
+ * CarState.cpp
+ *
+ *  Created on: Jun 20, 2016
+ *      Author: hatem
+ */
 
-#include "op_planner/LocalPlannerH.h"
-#include "op_utility/UtilityH.h"
-#include "op_planner/PlanningHelpers.h"
-#include "op_planner/MappingHelpers.h"
-#include "op_planner/MatrixOperations.h"
-#include "op_planner/PlannerH.h"
+#include "LocalPlannerH.h"
+#include "UtilityH.h"
+#include "PlanningHelpers.h"
+#include "MappingHelpers.h"
+#include "MatrixOperations.h"
+#include "PlannerH.h"
 
 using namespace UtilityHNS;
 
@@ -72,11 +74,9 @@ void LocalPlannerH::Init(const ControllerParams& ctrlParams, const PlannerHNS::P
  		m_params = params;
  		m_InitialFollowingDistance = m_params.minFollowingDistance;
 
- 		m_pidVelocity.Init(0.005, 0.005, 0.05);
+ 		//m_pidVelocity.Init(0.005, 0.005, 0.05);
+ 		m_pidVelocity.Init(0.01, 0.004, 0.01);
 		m_pidVelocity.Setlimit(m_params.maxSpeed, 0);
-
-		m_pidStopping.Init(0.1, 0.05, 0.1);
-		m_pidStopping.Setlimit(m_params.horizonDistance, 0);
 
 		if(m_pCurrentBehaviorState)
 			m_pCurrentBehaviorState->SetBehaviorsParams(&m_params);
@@ -114,10 +114,6 @@ void LocalPlannerH::InitBehaviorStates()
 	m_pStopSignWaitState->decisionMakingTime = 5.0;
 	m_pStopSignWaitState->InsertNextState(m_pStopSignStopState);
 
-	m_pFollowState->InsertNextState(m_pStopState);
-	m_pFollowState->InsertNextState(m_pTrafficLightStopState);
-	m_pFollowState->InsertNextState(m_pStopSignStopState);
-
 	m_pAvoidObstacleState->decisionMakingTime = 0.1;
 
 	m_pCurrentBehaviorState = m_pInitState;
@@ -132,35 +128,6 @@ void LocalPlannerH::InitPolygons()
 	m_CarShapePolygon.push_back(GPSPoint(w2, -l2, 0,0));
 	m_CarShapePolygon.push_back(GPSPoint(w2, l2, 0,0));
 	m_CarShapePolygon.push_back(GPSPoint(-w2, l2, 0,0));
-}
-
-void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
-{
-
-	m_pidVelocity.Init(0.005, 0.005, 0.05);
-	m_pidVelocity.Setlimit(m_params.maxSpeed, 0);
-
-	m_pidStopping.Init(0.1, 0.05, 0.1);
-	m_pidStopping.Setlimit(m_params.horizonDistance, 0);
-
-	m_PrevBrakingWayPoint = 0;
-	m_iSafeTrajectory = 0;
-	m_iCurrentTotalPathId = 0;
-	m_CurrentVelocity =  m_CurrentVelocityD =0;
-	m_CurrentSteering = m_CurrentSteeringD =0;
-	m_CurrentShift 		=  m_CurrentShiftD = SHIFT_POS_NN;
-	m_CurrentAccSteerAngle = m_CurrentAccVelocity = 0;
-
-	m_pCurrentBehaviorState = m_pFollowState;
-	m_TotalPath.clear();
-	m_OriginalLocalPath.clear();
-	m_TotalOriginalPath.clear();
-	m_Path.clear();
-	m_RollOuts.clear();
-	m_pCurrentBehaviorState->m_Behavior = PlannerHNS::FORWARD_STATE;
-	m_pCurrentBehaviorState->GetCalcParams()->bOutsideControl = 1;
-	FirstLocalizeMe(start_pose);
-	LocalizeMe(0);
 }
 
  void LocalPlannerH::FirstLocalizeMe(const WayPoint& initCarPos)
@@ -265,6 +232,7 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
 		 double d = hypot(trafficLights.at(i).pos.y - state.pos.y, trafficLights.at(i).pos.x - state.pos.x);
 		 if(d <= trafficLights.at(i).stoppingDistance)
 		 {
+			 //double a = UtilityH::FixNegativeAngle(atan2(trafficLights.at(i).pos.y - state.pos.y, trafficLights.at(i).pos.x - state.pos.x));
 			 double a_diff = UtilityH::AngleBetweenTwoAnglesPositive(UtilityH::FixNegativeAngle(trafficLights.at(i).pos.a) , UtilityH::FixNegativeAngle(state.pos.a));
 
 			 if(a_diff < M_PI_2 && trafficLights.at(i).id != prevTrafficLightId)
@@ -286,6 +254,7 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
  	PreCalculatedConditions* pValues = m_pCurrentBehaviorState->GetCalcParams();
 
  	double critical_long_front_distance =  m_CarInfo.wheel_base/2.0 + m_CarInfo.length/2.0 + m_params.verticalSafetyDistance;
+	//double critical_long_back_distance =  m_CarInfo.length/2.0 + m_params.verticalSafetyDistance - m_CarInfo.wheel_base/2.0;
 
  	pValues->minStoppingDistance = -pow(car_state.speed, 2)/(m_CarInfo.max_deceleration);
 
@@ -301,6 +270,7 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
  	pValues->currentVelocity 		= car_state.speed;
  	pValues->bTrafficIsRed 			= false;
  	pValues->currentTrafficLightID 	= -1;
+// 	pValues->currentStopSignID		= -1;
  	pValues->bRePlan 				= false;
  	pValues->bFullyBlock 			= false;
 
@@ -333,6 +303,12 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
  	m_iSafeTrajectory = pValues->iCurrSafeTrajectory;
  	m_iCurrentTotalPathId = pValues->iCurrSafeLane;
 
+
+// 	if(bestTrajectory.index == -1 && pValues->distanceToNext < m_pCurrentBehaviorState->m_pParams->minFollowingDistance)
+// 		pValues->bFullyBlock = true;
+
+
+
  	int stopLineID = -1;
  	int stopSignID = -1;
  	int trafficLightID = -1;
@@ -340,7 +316,7 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
  	bool bGreenTrafficLight = true;
 
  	if(m_TotalPath.size()>0)
- 		distanceToClosestStopLine = PlanningHelpers::GetDistanceToClosestStopLineAndCheck(m_TotalPath.at(pValues->iCurrSafeLane), state, 0, stopLineID, stopSignID, trafficLightID) - critical_long_front_distance;
+ 		distanceToClosestStopLine = PlanningHelpers::GetDistanceToClosestStopLineAndCheck(m_TotalPath.at(pValues->iCurrSafeLane), state, stopLineID, stopSignID, trafficLightID) - critical_long_front_distance;
 
  	if(distanceToClosestStopLine > 0 && distanceToClosestStopLine < pValues->minStoppingDistance)
  	{
@@ -458,7 +434,7 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
 					m_pCurrentBehaviorState->m_pParams->speedProfileFactor,
 					m_pCurrentBehaviorState->m_pParams->enableHeadingSmoothing,
 					preCalcPrams->iCurrSafeLane , preCalcPrams->iCurrSafeTrajectory,
-					m_RollOuts, m_SampledPoints);
+					m_RollOuts, m_PathSection, m_SampledPoints);
 
 			m_pCurrentBehaviorState->GetCalcParams()->bRePlan = false;
 			m_pCurrentBehaviorState->GetCalcParams()->bNewGlobalPath = false;
@@ -490,25 +466,21 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
 	PlannerHNS::PreCalculatedConditions *preCalcPrams = m_pCurrentBehaviorState->GetCalcParams();
 
 	m_pCurrentBehaviorState = m_pCurrentBehaviorState->GetNextState();
-	if(m_pCurrentBehaviorState==0)
-		m_pCurrentBehaviorState = m_pInitState;
-
 	PlannerHNS::BehaviorState currentBehavior;
 
 	currentBehavior.state = m_pCurrentBehaviorState->m_Behavior;
 	currentBehavior.followDistance = preCalcPrams->distanceToNext;
 
+	if(preCalcPrams->bUpcomingRight)
+		currentBehavior.indicator = PlannerHNS::INDICATOR_RIGHT;
+	else if(preCalcPrams->bUpcomingLeft)
+		currentBehavior.indicator = PlannerHNS::INDICATOR_LEFT;
+	else
+		currentBehavior.indicator = PlannerHNS::INDICATOR_NONE;
 
 	currentBehavior.minVelocity		= 0;
 	currentBehavior.stopDistance 	= preCalcPrams->distanceToStop();
 	currentBehavior.followVelocity 	= preCalcPrams->velocityOfNext;
-
-	double average_braking_distance = -pow(vehicleState.speed, 2)/(m_CarInfo.max_deceleration) + m_params.additionalBrakingDistance;
-
-	if(average_braking_distance  < 15)
-		average_braking_distance = 15;
-
-	currentBehavior.indicator = PlanningHelpers::GetIndicatorsFromPath(m_Path, state, average_braking_distance );
 
 	return currentBehavior;
  }
@@ -619,12 +591,10 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
 
  double LocalPlannerH::UpdateVelocityDirectlyToTrajectory(const BehaviorState& beh, const VehicleState& CurrStatus, const double& dt)
  {
-	if(m_TotalOriginalPath.size() ==0 ) return 0;
-
 	RelativeInfo info, total_info;
 	PlanningHelpers::GetRelativeInfo(m_TotalOriginalPath.at(m_iCurrentTotalPathId), state, total_info);
 	PlanningHelpers::GetRelativeInfo(m_Path, state, info);
-	double average_braking_distance = -pow(CurrStatus.speed, 2)/(m_CarInfo.max_deceleration) + m_params.additionalBrakingDistance;
+	double average_braking_distance = -pow(CurrStatus.speed, 2)/(m_CarInfo.max_deceleration)+10.0;
 	double max_velocity	= PlannerHNS::PlanningHelpers::GetVelocityAhead(m_TotalOriginalPath.at(m_iCurrentTotalPathId), total_info, m_PrevBrakingWayPoint, average_braking_distance);
 
 	unsigned int point_index = 0;
@@ -640,16 +610,25 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
 	{
 		PlanningHelpers::GetFollowPointOnTrajectory(m_Path, info, beh.stopDistance - critical_long_front_distance, point_index);
 
-		double e = -beh.stopDistance;
-		double desiredVelocity = m_pidStopping.getPID(e);
+		double inc = CurrStatus.speed;
+		int iRange = point_index - info.iBack;
+		if(iRange > 0)
+			inc = inc / (double)iRange;
+		else
+			inc = 0;
+
+		double target_velocity = CurrStatus.speed - inc;
+
+		double e = 0 - CurrStatus.speed;
+		//m_pidVelocity.Setlimit(0, 0);
+		double desiredVelocity = m_pidVelocity.getPID(e);
 
 		for(unsigned int i =  info.iBack; i < point_index; i++)
 		{
 			 if(i < m_Path.size() && i >= 0)
 				 m_Path.at(i).v = desiredVelocity;
+			 target_velocity -= inc;
 		}
-
-		return desiredVelocity;
 	}
 	else if(beh.state == FOLLOW_STATE)
 	{
@@ -657,33 +636,46 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
 		if(targe_acceleration <= 0 &&  targe_acceleration > m_CarInfo.max_deceleration/2.0)
 		{
 			double target_velocity = (targe_acceleration * dt) + CurrStatus.speed;
+			if(m_pCurrentBehaviorState->GetCalcParams()->iCurrSafeTrajectory != m_pCurrentBehaviorState->GetCalcParams()->iCentralTrajectory)
+				target_velocity*=AVOIDANCE_SPEED_FACTOR;
 
 			double e = target_velocity - CurrStatus.speed;
+			//m_pidVelocity.Setlimit(target_velocity, 0);
 			double desiredVelocity = m_pidVelocity.getPID(e);
 
 			for(unsigned int i = info.iBack; i < m_Path.size(); i++)
 			{
-				if(i < m_Path.size() && i >= 0)
-					m_Path.at(i).v = desiredVelocity;
+				m_Path.at(i).v = target_velocity;
 			}
 
-			return desiredVelocity;
 			//cout << "Accelerate -> Target V: " << target_velocity << ", Brake D: " <<  average_braking_distance << ", Acceleration: " << targe_acceleration << endl;
 		}
 		else
 		{
 			WayPoint pursuite_point = PlanningHelpers::GetFollowPointOnTrajectory(m_Path, info, beh.followDistance - critical_long_front_distance, point_index);
+			double inc = CurrStatus.speed;
+			int iRange = point_index - info.iBack;
 
-			double e = beh.followDistance - m_params.minFollowingDistance;
-			double desiredVelocity = m_pidStopping.getPID(e);
+			if(iRange > 0)
+				inc = inc / (double)iRange;
+			else
+				inc = 0;
 
+			double target_velocity = CurrStatus.speed - inc;
 			for(unsigned int i =  info.iBack; i < point_index; i++)
 			{
-				if(i < m_Path.size() && i >= 0)
-					m_Path.at(i).v = desiredVelocity;
+				 if(i < m_Path.size() && i >= 0)
+				 {
+					 target_velocity = target_velocity < 0 ? 0 : target_velocity;
+					 if(m_pCurrentBehaviorState->GetCalcParams()->iCurrSafeTrajectory == m_pCurrentBehaviorState->GetCalcParams()->iCentralTrajectory)
+						 m_Path.at(i).v = target_velocity;
+					 else
+						 m_Path.at(i).v = target_velocity*AVOIDANCE_SPEED_FACTOR;
+				 }
+
+				 target_velocity -= inc;
 			}
 
-			return desiredVelocity;
 			//cout << "Decelerate -> Target V: " << target_velocity << ", Brake D: " <<  average_braking_distance << ", Start I" << info.iBack << endl;
 		}
 
@@ -691,11 +683,13 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
 	else if(beh.state == FORWARD_STATE || beh.state == OBSTACLE_AVOIDANCE_STATE )
 	{
 		double target_velocity = max_velocity;
-		if(m_pCurrentBehaviorState->GetCalcParams()->iCurrSafeTrajectory != m_pCurrentBehaviorState->GetCalcParams()->iCentralTrajectory)
-			target_velocity*=AVOIDANCE_SPEED_FACTOR;
+//		if(m_pCurrentBehaviorState->GetCalcParams()->iCurrSafeTrajectory != m_pCurrentBehaviorState->GetCalcParams()->iCentralTrajectory)
+//			target_velocity*=AVOIDANCE_SPEED_FACTOR;
 
 		double e = target_velocity - CurrStatus.speed;
+		//m_pidVelocity.Setlimit(target_velocity, 0);
 		double desiredVelocity = m_pidVelocity.getPID(e);
+		//desiredVelocity = target_velocity;
 
 		for(unsigned int i = info.iBack; i < m_Path.size(); i++)
 		{
@@ -709,8 +703,6 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
 		double target_velocity = 0;
 		for(unsigned int i = info.iBack; i < m_Path.size(); i++)
 			m_Path.at(i).v = target_velocity;
-
-		return target_velocity;
 	}
 
 	return max_velocity;
@@ -718,7 +710,7 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
 
  void LocalPlannerH::ExtractHorizonAndCalculateRecommendedSpeed()
  {
-	 if(m_pCurrentBehaviorState->GetCalcParams()->bNewGlobalPath && m_TotalOriginalPath.size() > 0)
+	 if(m_pCurrentBehaviorState->GetCalcParams()->bNewGlobalPath)
 		{
 		 	m_PrevBrakingWayPoint = 0;
 		 	PlanningHelpers::FixPathDensity(m_TotalOriginalPath.at(m_iCurrentTotalPathId), m_pCurrentBehaviorState->m_pParams->pathDensity);
@@ -755,7 +747,6 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
 		const std::vector<TrafficLight>& trafficLight,
 		const bool& bLive)
 {
-	 PlannerHNS::BehaviorState beh;
 
 	 m_params.minFollowingDistance = m_InitialFollowingDistance + vehicleState.speed*1.5;
 
@@ -764,11 +755,10 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
 
 	UpdateCurrentLane(map, 3.0);
 
-
 	ExtractHorizonAndCalculateRecommendedSpeed();
 
-
 	m_PredictedTrajectoryObstacles = obj_list;
+	//m_TrajectoryPredictionForMovingObstacles.DoOneStep(map, vehicleState, state, m_TotalPath.at(m_iCurrentTotalPathId), m_PredictedTrajectoryObstacles, m_params.minFollowingDistance);
 
 	timespec t;
 	UtilityH::GetTickCount(t);
@@ -781,12 +771,12 @@ void LocalPlannerH::ReInitializePlanner(const WayPoint& start_pose)
 	UtilityH::GetTickCount(t);
 	CalculateImportantParameterForDecisionMaking(vehicleState, goalID, bEmergencyStop, trafficLight, tc);
 
-	beh = GenerateBehaviorState(vehicleState);
+	PlannerHNS::BehaviorState beh = GenerateBehaviorState(vehicleState);
 	m_BehaviorGenTime = UtilityH::GetTimeDiffNow(t);
+
 
 	UtilityH::GetTickCount(t);
 	beh.bNewPlan = SelectSafeTrajectoryAndSpeedProfile(vehicleState);
-
 	m_RollOutsGenerationTime = UtilityH::GetTimeDiffNow(t);
 
 	beh.maxVelocity = UpdateVelocityDirectlyToTrajectory(beh, vehicleState, dt);

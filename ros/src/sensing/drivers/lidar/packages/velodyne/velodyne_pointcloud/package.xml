@@ -1,11 +1,11 @@
 <package>
 
   <name>velodyne_pointcloud</name>
-  <version>1.10.0</version>
+  <version>1.2.0</version>
   <description>
     Point cloud conversions for Velodyne 3D LIDARs.
   </description>
-  <maintainer email="jwhitley@autonomoustuff.com">Josh Whitley</maintainer>
+  <maintainer email="jack.oquin@gmail.com">Jack O'Quin</maintainer>
   <author>Jack O'Quin</author>
   <author>Piyush Khandelwal</author>
   <author>Jesse Vera</author>
@@ -29,12 +29,10 @@
   <build_depend>velodyne_msgs</build_depend>
   <build_depend>yaml-cpp</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
-  <build_depend>vector_map_msgs</build_depend>
 
   <!-- these build dependencies are only needed for unit testing -->
   <build_depend>roslaunch</build_depend>
   <build_depend>rostest</build_depend>
-  <build_depend>tf2_ros</build_depend>
 
   <run_depend>angles</run_depend>
   <run_depend>nodelet</run_depend>
@@ -49,8 +47,6 @@
   <run_depend>velodyne_msgs</run_depend>
   <run_depend>yaml-cpp</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
-  <run_depend>velodyne_laserscan</run_depend>
-  <run_depend>vector_map_msgs</run_depend>
 
   <export>
     <nodelet plugin="${prefix}/nodelets.xml"/>

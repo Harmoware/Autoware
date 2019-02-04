@@ -1,18 +1,32 @@
 /*
- * Copyright 2016-2019 Autoware Foundation. All rights reserved.
+// *  Copyright (c) 2016, Nagoya University
+ *  All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  * Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ *  * Neither the name of Autoware nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ *  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ *  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ *  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ *  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ *  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #ifndef dp_planner_CORE_H
 #define dp_planner_CORE_H
@@ -24,9 +38,12 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseArray.h>
+#include <geometry_msgs/TwistStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/OccupancyGrid.h>
-
+#include <autoware_msgs/Signals.h>
+#include <autoware_msgs/traffic_light.h>
+//#include <runtime_manager/traffic_light.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <tf/tf.h>
@@ -34,20 +51,25 @@
 #include <std_msgs/Int32.h>
 #include "waypoint_follower/libwaypoint_follower.h"
 #include "autoware_msgs/LaneArray.h"
-#include "autoware_can_msgs/CANInfo.h"
+#include "autoware_msgs/CanInfo.h"
 
 #include "autoware_msgs/CloudCluster.h"
 #include "autoware_msgs/CloudClusterArray.h"
+#include "autoware_msgs/ControlCommand.h"
+
 
 #include <jsk_recognition_msgs/BoundingBox.h>
 #include <jsk_recognition_msgs/BoundingBoxArray.h>
 
-#include "op_planner/RoadNetwork.h"
-#include "op_planner/MappingHelpers.h"
-#include "op_planner/PlanningHelpers.h"
-#include "op_planner/LocalPlannerH.h"
-#include "ROSHelpers.h"
-#include "op_simu/SimpleTracker.h"
+#include "BehaviorPrediction.h"
+#include "RoadNetwork.h"
+#include "MappingHelpers.h"
+#include "PlanningHelpers.h"
+//#include "CarState.h"
+#include "LocalPlannerH.h"
+#include "RosHelpers.h"
+#include "SimpleTracker.h"
+
 
 #include <opencv/cv.h>
 #include <cv_bridge/cv_bridge.h>
@@ -64,9 +86,10 @@
 namespace PlannerXNS
 {
 
-#define SIMU_OBSTACLE_WIDTH 3.5
+#define _DATASET_GENERATION_BLOCK
+#define SIMU_OBSTACLE_WIDTH 1.5
 #define SIMU_OBSTACLE_HEIGHT 0.5
-#define SIMU_OBSTACLE_LENGTH 2.0
+#define SIMU_OBSTACLE_LENGTH 1.0
 
 enum SIGNAL_TYPE{SIMULATION_SIGNAL, ROBOT_SIGNAL};
 enum MAP_SOURCE_TYPE{MAP_AUTOWARE, MAP_FOLDER, MAP_KML_FILE};
@@ -82,10 +105,13 @@ protected:
 
 	timespec m_Timer;
 	timespec m_TrafficLightTimer;
+	double m_TotalPlanningTime;
+	double m_LogAndVisualizeTime;
 	int m_counter;
 	int m_frequency;
 
 protected:
+	//PlannerHNS::BehaviorPrediction m_ParticlePred;
 	SimulationNS::SimpleTracker m_ObstacleTracking;
 	PlannerHNS::LocalPlannerH m_LocalPlanner;
 
@@ -97,9 +123,15 @@ protected:
 	PlannerHNS::WayPoint m_CurrentPos;
 	bool bNewCurrentPos;
 
+	geometry_msgs::TwistStamped m_Twist_raw;
+	geometry_msgs::TwistStamped m_Twist_cmd;
+	autoware_msgs::ControlCommand m_Ctrl_cmd;
+
 	std::vector<PlannerHNS::DetectedObject> m_OriginalClusters;
 	std::vector<PlannerHNS::DetectedObject> m_TrackedClusters;
 	std::vector<PlannerHNS::DetectedObject> m_DetectedBoxes;
+	std::vector<PlannerHNS::DetectedObject> m_AllObstacles;
+
 	bool bNewClusters;
 	jsk_recognition_msgs::BoundingBoxArray m_BoundingBoxes;
 	bool bNewBoxes;
@@ -110,8 +142,13 @@ protected:
 	bool bNewEmergency;
 	int m_bEmergencyStop;
 
-	bool bNewTrafficLigh;
-	bool m_bGreenLight;
+	bool bNewLightStatus;
+	bool bNewLightSignal;
+	PlannerHNS::TrafficLightState  m_CurrLightStatus;
+	std::vector<PlannerHNS::TrafficLight> m_CurrTrafficLight;
+	std::vector<PlannerHNS::TrafficLight> m_PrevTrafficLight;
+
+	PlannerHNS::PlanningParams m_LocalPlannerParams;
 
 	bool bNewOutsideControl;
 	int m_bOutsideControl;
@@ -126,7 +163,8 @@ protected:
 
 	//Planning Related variables
 	PlannerHNS::BehaviorState m_CurrentBehavior;
-	PlannerHNS::BehaviorState m_PrevBehavior;
+	//PlannerHNS::BehaviorState m_PrevBehavior;
+	//PlannerHNS::WayPoint m_CurrentGoal;
 	struct timespec m_PlanningTimer;
 	AutowareRoadNetwork m_AwMap;
   	PlannerHNS::RoadNetwork m_Map;
@@ -134,12 +172,35 @@ protected:
   	bool	bKmlMapLoaded;
   	std::string m_KmlMapPath;
 
+  	bool m_bEnableCurbObstacles;
   	bool m_bEnableTracking;
   	bool m_bEnableOutsideControl;
 
+  	std::vector<int> curr_lanes;
+  	std::vector<PlannerHNS::DetectedObject> curr_curbs_obstacles;
+
   	std::vector<std::string>    m_LogData;
 
-	bool  enablePlannerDynamicSwitch;
+  	std::vector<visualization_msgs::MarkerArray> m_DetectedPolygonsDummy;
+  	std::vector<visualization_msgs::MarkerArray> m_DetectedPolygonsActual;
+  	visualization_msgs::MarkerArray m_PredictedTrajectoriesDummy;
+  	visualization_msgs::MarkerArray m_PredictedTrajectoriesActual;
+  	visualization_msgs::MarkerArray m_AllConnectedLines;
+  	visualization_msgs::MarkerArray m_ForwardPredictionMarkersDummy;
+  	visualization_msgs::MarkerArray m_ForwardPredictionMarkers;
+  	visualization_msgs::MarkerArray m_OthersForwardPredictionMarkers;
+  	visualization_msgs::MarkerArray m_OthersForwardPredictionMarkersDummy;
+
+  	int m_nDetectedObjRepresentations;
+  	int m_nDummyObjPerRep;
+  	long m_NextObjId;
+
+protected: //Global Markers
+  	visualization_msgs::MarkerArray m_DetectedPolygonsAllMarkers;
+  	visualization_msgs::MarkerArray m_AllRollouts;
+  	autoware_msgs::lane m_CurrentTrajectoryToSend;
+
+
 
 protected:
 	//ROS messages (topics)
@@ -156,12 +217,16 @@ protected:
 	ros::Publisher pub_GoalPoint;
 	ros::Publisher pub_AStarStartPoint;
 	ros::Publisher pub_AStarGoalPoint;
-	ros::Publisher pub_EnableLattice;
 
+	ros::Publisher pub_ConnectedPointsRviz;
+
+	ros::Publisher pub_OthersForwardPredictionRviz;
+	ros::Publisher pub_ForwardPredictionRviz;
 	ros::Publisher pub_DetectedPolygonsRviz;
 	ros::Publisher pub_TrackedObstaclesRviz;
 	ros::Publisher pub_LocalTrajectoriesRviz;
-	ros::Publisher pub_LocalTrajectoriesRviz_dynamic;
+	ros::Publisher pub_PredictedTrajectoriesRviz;
+	ros::Publisher pub_ParticlesRviz;
 	ros::Publisher pub_TestLineRviz;
 	ros::Publisher pub_BehaviorStateRviz;
 	ros::Publisher pub_SafetyBorderRviz;
@@ -169,21 +234,26 @@ protected:
 	ros::Publisher pub_SimuBoxPose;
 
 	// define subscribers.
-	ros::Subscriber sub_initialpose;
-	ros::Subscriber sub_current_pose;
-	ros::Subscriber sub_current_velocity;
-	ros::Subscriber sub_cluster_cloud;
-	ros::Subscriber sub_bounding_boxs;
+	ros::Subscriber sub_initialpose			;
+	ros::Subscriber sub_current_pose 		;
+	ros::Subscriber sub_current_velocity	;
+	ros::Subscriber sub_cluster_cloud		;
+	ros::Subscriber sub_bounding_boxs		;
 	ros::Subscriber sub_vehicle_simu_status ;
-	ros::Subscriber sub_robot_odom;
-	ros::Subscriber sub_can_info;
-	ros::Subscriber sub_EmergencyStop;
-	ros::Subscriber sub_TrafficLight;
-	ros::Subscriber sub_OutsideControl;
-	ros::Subscriber sub_AStarPath;
-	ros::Subscriber sub_WayPlannerPaths;
+	ros::Subscriber sub_robot_odom			;
+	ros::Subscriber sub_can_info			;
+	ros::Subscriber sub_EmergencyStop		;
+	ros::Subscriber sub_TrafficLightStatus	;
+	ros::Subscriber sub_TrafficLightSignals	;
+	ros::Subscriber sub_OutsideControl		;
+	ros::Subscriber sub_AStarPath			;
+	ros::Subscriber sub_WayPlannerPaths		;
 
-	ros::Subscriber sub_CostMap;
+	ros::Subscriber sub_twist_cmd			;
+	ros::Subscriber sub_twist_raw			;
+	ros::Subscriber sub_ctrl_cmd			;
+
+	ros::Subscriber sub_CostMap				;
 
 	//vector map subscription
 	ros::Subscriber sub_map_points;
@@ -200,14 +270,19 @@ protected:
 	void callbackGetCloudClusters(const autoware_msgs::CloudClusterArrayConstPtr& msg);
 	void callbackGetBoundingBoxes(const jsk_recognition_msgs::BoundingBoxArrayConstPtr& msg);
 	void callbackGetVehicleStatus(const geometry_msgs::TwistStampedConstPtr& msg);
-	void callbackGetCANInfo(const autoware_can_msgs::CANInfoConstPtr &msg);
+	void callbackGetCanInfo(const autoware_msgs::CanInfoConstPtr &msg);
 	void callbackGetRobotOdom(const nav_msgs::OdometryConstPtr& msg);
 	void callbackGetEmergencyStop(const std_msgs::Int8& msg);
-	void callbackGetTrafficLight(const std_msgs::Int8& msg);
+	void callbackGetTrafficLightStatus(const autoware_msgs::traffic_light & msg);
+	void callbackGetTrafficLightSignals(const autoware_msgs::Signals& msg);
 	void callbackGetOutsideControl(const std_msgs::Int8& msg);
 	void callbackGetAStarPath(const autoware_msgs::LaneArrayConstPtr& msg);
 	void callbackGetWayPlannerPath(const autoware_msgs::LaneArrayConstPtr& msg);
 	void callbackGetCostMap(const nav_msgs::OccupancyGrid& msg);
+
+	void callbackGetTwistCMD(const geometry_msgs::TwistStampedConstPtr& msg);
+	void callbackGetTwistRaw(const geometry_msgs::TwistStampedConstPtr& msg);
+	void callbackGetCommandCMD(const autoware_msgs::ControlCommandConstPtr& msg);
 
 
 	//Vector map callbacks
@@ -231,6 +306,39 @@ protected:
   void UpdatePlanningParams();
 
   autoware_msgs::CloudCluster GenerateSimulatedObstacleCluster(const double& x_rand, const double& y_rand, const double& z_rand, const int& nPoints, const geometry_msgs::PointStamped& centerPose);
+  void GenerateCurbsObstacles(std::vector<PlannerHNS::DetectedObject>& curb_obstacles);
+  void LogLocalPlanningInfo(double dt);
+  void VisualizeLocalPlanner();
+  void SendLocalPlanningTopics();
+
+#ifdef DATASET_GENERATION_BLOCK
+private:
+  struct DataPairs
+  {
+	  cv::Mat image;
+	  PlannerHNS::VehicleState vehicleState;
+	  PlannerHNS::WayPoint currentPos;
+	  std::vector<PlannerHNS::WayPoint> path;
+	  std::vector< std::vector<PlannerHNS::WayPoint> > predictedPaths;
+  };
+
+  int m_iRecordNumber;
+  cv::Mat m_CurrImage;
+  std::vector<DataPairs> m_DrivePoints;
+
+  //tf::TransformListener m_Transformation;
+  std::ofstream m_ImagesVectors;
+  std::ofstream m_TrajVectors;
+
+  ros::Subscriber sub_image_reader;
+  void callbackReadImage(const sensor_msgs::ImageConstPtr& msg);
+  void ExtractPathFromDriveData(double max_extraction = 50);
+  void WritePathCSV(const std::string& fName, std::vector<PlannerHNS::WayPoint>& path);
+  void WriteImageAndPathCSV(cv::Mat img, std::vector<PlannerHNS::WayPoint>& path);
+
+#endif
+
+
 };
 
 }

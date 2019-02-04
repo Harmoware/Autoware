@@ -3,14 +3,11 @@ project(velodyne_driver)
 
 set(${PROJECT_NAME}_CATKIN_DEPS 
     diagnostic_updater
-    dynamic_reconfigure
     nodelet
     roscpp
     tf
     velodyne_msgs)
 
-
-find_package(velodyne_msgs REQUIRED)
 find_package(catkin REQUIRED COMPONENTS ${${PROJECT_NAME}_CATKIN_DEPS})
 
 # This driver uses Boost threads
@@ -20,9 +17,6 @@ find_package(Boost REQUIRED COMPONENTS thread)
 set(libpcap_LIBRARIES -lpcap)
 
 include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
-
-# Generate dynamic_reconfigure server
-generate_dynamic_reconfigure_options(cfg/VelodyneNode.cfg)
 
 # objects needed by other ROS packages that depend on this one
 catkin_package(CATKIN_DEPENDS ${${PROJECT_NAME}_CATKIN_DEPS}
