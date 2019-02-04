@@ -10,11 +10,10 @@
 #include <algorithm>
 #include "UtilityH.h"
 #include "DataRW.h"
-#include<unistd.h>
-#include<math.h>
-#include<fcntl.h>
+#include <unistd.h>
+#include <math.h>
+#include <fcntl.h>
 #include <sys/termios.h>
-#include <plib/js.h>
 #include "autoware_msgs/accel_cmd.h"
 #include "autoware_msgs/brake_cmd.h"
 #include "autoware_msgs/steer_cmd.h"
